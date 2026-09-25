@@ -1,0 +1,24 @@
+# docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+services:
+  backend:
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      RUN_MIGRATIONS: "1"
+      SEED: ${SEED:-0}
+    volumes:
+      - backups:/backups
+
+  celery_worker:
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      RUN_MIGRATIONS: "0"
+    volumes:
+      - backups:/backups
+
+  celery_beat:
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      RUN_MIGRATIONS: "0"
+    volumes:
+      - backups:/backups
