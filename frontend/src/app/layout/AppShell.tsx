@@ -65,15 +65,19 @@ export function ControlPanel({
         )}
         {onSearch && (
           <div className="pointer-events-none order-last flex w-full justify-center md:absolute md:inset-x-0 md:order-none md:w-auto">
-            <label className="pointer-events-auto flex h-8 w-full items-center gap-2 rounded-md border border-odoo-border bg-white px-2.5 shadow-sm md:w-[min(100%,420px)]">
-              <Search className="h-3.5 w-3.5 shrink-0 text-odoo-text-light" />
+            <label className="pointer-events-auto flex h-9 w-full items-stretch overflow-hidden rounded-[3px] border border-[#8FB9B8] bg-white shadow-sm focus-within:ring-1 focus-within:ring-[#8FB9B8] md:w-[min(100%,600px)]">
+              <span className="flex items-center pl-3 pr-2">
+                <Search className="h-4 w-4 shrink-0 text-[#5f6b70]" />
+              </span>
               <input
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
                 placeholder="Поиск..."
-                className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-odoo-text-light"
+                className="min-w-0 flex-1 bg-transparent pr-2 text-[14px] outline-none placeholder:text-[#8b9397]"
               />
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-odoo-text-light" />
+              <span className="flex w-9 shrink-0 items-center justify-center border-l border-[#c8d8d8] text-[#4e5c61]">
+                <ChevronDown className="h-4 w-4" />
+              </span>
             </label>
           </div>
         )}
