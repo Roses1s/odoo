@@ -15,7 +15,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, MoreHorizontal, Plus } from "lucide-react";
+import { ChevronDown, MoreHorizontal, MoreVertical, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
@@ -56,54 +56,95 @@ function initials(email?: string) {
 
 function StarRating({ value, onChange }: { value: number; onChange?: (n: number) => void }) {
   return (
-    <span className="text-[11px] tracking-tight text-odoo-warning">
-      {[1, 2, 3].map((n) => (
-        <button
-          key={n}
-          type="button"
-          className="px-px"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onChange?.(value === n ? 0 : n);
-          }}
-        >
-          {value >= n ? "★" : "☆"}
-        </button>
-      ))}
+    <span className="text-[12px] tracking-tight text-odoo-warning" aria-label={`Приоритет: ${value} из 3`}>
+      {[1, 2, 3].map((n) =>
+        onChange ? (
+          <button
+            key={n}
+            type="button"
+            className="px-px"
+            aria-label={`Приоритет ${n}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onChange(value === n ? 0 : n);
+            }}
+          >
+            {value >= n ? "★" : "☆"}
+          </button>
+        ) : (
+          <span key={n} className="px-px" aria-hidden="true">
+            {value >= n ? "★" : "☆"}
+          </span>
+        ),
+      )}
     </span>
   );
 }
 
-function LeadCardBody({ lead }: { lead: Lead }) {
+const TAG_STYLES: Record<string, string> = {
+  blue: "bg-odoo-tag-blue-bg text-odoo-tag-blue-text",
+  green: "bg-odoo-tag-green-bg text-odoo-tag-green-text",
+  red: "bg-odoo-tag-red-bg text-odoo-tag-red-text",
+  yellow: "bg-odoo-tag-yellow-bg text-odoo-tag-yellow-text",
+  purple: "bg-odoo-tag-purple-bg text-odoo-tag-purple-text",
+  orange: "bg-odoo-tag-orange-bg text-odoo-tag-orange-text",
+};
+
+function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boolean }) {
+  const title = `${lead.name} — ${lead.inn}`;
+  const revenue = Number(lead.expected_revenue || 0);
+
   return (
-    <>
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-[13px] font-medium leading-tight text-odoo-text">{lead.name}</h3>
-        <StarRating value={lead.priority} />
+    <div className="flex min-h-[116px] flex-col">
+      <div className={menuSpace ? "pr-7" : ""}>
+        <h3
+          className="line-clamp-2 text-[13px] font-semibold leading-[1.25rem] text-odoo-text"
+          title={title}
+        >
+          {title}
+        </h3>
+        {lead.logist_contact && (
+          <p className="mt-0.5 truncate text-[12px] text-odoo-text-muted" title={lead.logist_contact}>
+            {lead.logist_contact}
+          </p>
+        )}
+        {revenue > 0 && (
+          <p className="mt-1 text-[12px] font-medium text-odoo-text">{formatMoney(revenue)}</p>
+        )}
       </div>
-      <p className="mt-0.5 truncate text-[12px] text-odoo-text-muted">{lead.logist_contact || lead.inn}</p>
-      <p className="mt-1 text-[13px] font-semibold text-odoo-text">{formatMoney(lead.expected_revenue)}</p>
-      <div className="mt-2 flex items-end justify-between gap-1">
-        <div className="flex flex-wrap gap-1">
-          {lead.tags?.map((t) => (
-            <span key={t.id} className="rounded-sm bg-odoo-tag-blue-bg px-1.5 py-px text-[10px] text-odoo-tag-blue-text">
-              {t.name}
+
+      {lead.tags?.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {lead.tags.map((tag) => (
+            <span
+              key={tag.id}
+              title={tag.name}
+              className={`inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-none ${
+                TAG_STYLES[tag.color] || TAG_STYLES.blue
+              }`}
+            >
+              <span className="max-w-[150px] truncate">{tag.name}</span>
             </span>
           ))}
         </div>
+      )}
+
+      <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+        <StarRating value={lead.priority} />
         <span
-          title={lead.assigned_to_email || ""}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-odoo-primary text-[9px] font-semibold text-white"
+          title={lead.assigned_to_email || "Не назначен"}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-odoo-primary text-[9px] font-semibold text-white shadow-sm"
         >
           {initials(lead.assigned_to_email)}
         </span>
       </div>
-    </>
+    </div>
   );
 }
 
 function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `lead-${lead.id}`,
     disabled: isOverlay,
@@ -122,7 +163,7 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
             : "cursor-grab border-odoo-border-light shadow-sm hover:shadow"
       }`}
     >
-      <LeadCardBody lead={lead} />
+      <LeadCardBody lead={lead} menuSpace={!isOverlay} />
     </div>
   );
 
@@ -134,9 +175,41 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
       style={style}
       {...attributes}
       {...listeners}
-      className="touch-none"
+      className="relative touch-none"
       aria-label={`Переместить ${lead.name}`}
     >
+      {!isDragging && (
+        <div className="absolute right-1 top-1 z-20">
+          <button
+            type="button"
+            aria-label="Меню карточки"
+            title="Меню"
+            className="rounded p-1 text-odoo-text-light hover:bg-odoo-bg hover:text-odoo-text"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuOpen((open) => !open);
+            }}
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+          {menuOpen && (
+            <div
+              className="absolute right-0 top-7 min-w-[110px] rounded border border-odoo-border bg-white py-1 shadow-lg"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Link
+                to={`/crm/leads/${lead.id}`}
+                className="block px-3 py-1.5 text-left text-xs text-odoo-text hover:bg-odoo-bg"
+              >
+                Открыть
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
       {isDragging ? (
         inner
       ) : (
