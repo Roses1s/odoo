@@ -35,6 +35,10 @@ function formatMoney(v: string | number | undefined) {
   return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(n);
 }
 
+function formatStageTotal(v: number) {
+  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(v);
+}
+
 const STAGE_COLORS: Record<string, string> = {
   slate: "#6C757D",
   purple: "#714B67",
@@ -90,23 +94,24 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className={menuSpace ? "pr-7" : ""}>
         <h3
-          className="line-clamp-2 text-[13px] font-semibold leading-4 text-odoo-text"
+          className="line-clamp-3 text-[13px] font-medium leading-[18px] text-odoo-text"
           title={title}
         >
           {title}
         </h3>
-        {lead.logist_contact && (
-          <p className="mt-0.5 truncate text-[12px] text-odoo-text-muted" title={lead.logist_contact}>
-            {lead.logist_contact}
-          </p>
-        )}
+        <p
+          className="mt-0.5 truncate text-[11px] text-odoo-text-muted"
+          title={lead.logist_contact || lead.name}
+        >
+          {lead.logist_contact || lead.name}
+        </p>
         {revenue > 0 && (
           <p className="mt-1 text-[12px] font-medium text-odoo-text">{formatMoney(revenue)}</p>
         )}
       </div>
 
       {lead.tags?.length > 0 && (
-        <div className="mt-1.5 flex min-h-4 flex-nowrap gap-1 overflow-hidden">
+        <div className="mt-1 flex flex-wrap gap-1 overflow-hidden">
           {lead.tags.map((tag) => (
             <span
               key={tag.id}
@@ -309,7 +314,7 @@ function Column({
       <button
         type="button"
         onClick={onFold}
-        className="flex h-[min(70vh,520px)] w-10 shrink-0 flex-col items-center rounded border border-odoo-border-light bg-white py-3"
+        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-odoo-border-light bg-white py-3"
         style={{ borderTop: `3px solid ${color}` }}
       >
         <span className="mt-8 origin-center rotate-180 text-[12px] font-semibold tracking-wide text-odoo-text [writing-mode:vertical-rl]">
@@ -320,8 +325,8 @@ function Column({
   }
 
   return (
-    <div className="flex w-[min(100vw-1rem,250px)] shrink-0 snap-center flex-col md:w-[250px]">
-      <div className="border-x border-t border-odoo-border-light bg-[#f8f7f8] px-2 pb-1.5 pt-1.5">
+    <div className="flex h-full w-[min(100vw-1rem,260px)] shrink-0 snap-center flex-col border-r border-odoo-border-light bg-white md:w-[260px]">
+      <div className="shrink-0 bg-[#faf9fa] px-2 pb-1.5 pt-1.5">
         <div className="flex items-start justify-between gap-1">
           <div className="min-w-0">
             {editing && canManage ? (
@@ -344,7 +349,6 @@ function Column({
                 <span className="ml-1 font-normal text-odoo-text-muted">{leads.length}</span>
               </button>
             )}
-            <div className="text-[11px] text-odoo-text-muted">{formatMoney(leads.reduce((s, l) => s + Number(l.expected_revenue || 0), 0))}</div>
           </div>
           <div className="relative flex items-center gap-0.5">
             <button
@@ -400,19 +404,24 @@ function Column({
             )}
           </div>
         </div>
-        <div className="mt-1 h-2 overflow-hidden bg-[#dedcdf]">
-          <div
-            className="h-full min-w-1"
-            style={{
-              width: `${Math.min(100, Math.max(4, leads.length * 12))}%`,
-              backgroundColor: color,
-            }}
-          />
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <div className="h-2.5 w-[124px] overflow-hidden bg-[#dedcdf]">
+            <div
+              className="h-full min-w-1"
+              style={{
+                width: `${Math.min(100, Math.max(4, leads.length * 12))}%`,
+                backgroundColor: color,
+              }}
+            />
+          </div>
+          <span className="truncate text-[11px] font-semibold text-odoo-text">
+            {formatStageTotal(leads.reduce((sum, lead) => sum + Number(lead.expected_revenue || 0), 0))}
+          </span>
         </div>
       </div>
       <div
         ref={setNodeRef}
-        className={`flex min-h-[240px] flex-1 flex-col overflow-y-auto border border-t-0 border-odoo-border-light ${isOver ? "bg-[#eef4fb]" : "bg-white"}`}
+        className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${isOver ? "bg-[#f4f7fb]" : "bg-white"}`}
       >
         <SortableContext items={leads.map((l) => `lead-${l.id}`)} strategy={verticalListSortingStrategy}>
           {loading ? Array.from({ length: 3 }).map((_, i) => <KanbanCardSkeleton key={i} />) : leads.map((lead) => <LeadCard key={lead.id} lead={lead} />)}
@@ -715,7 +724,7 @@ export function KanbanPage() {
       )}
 
       {view !== "list" && (
-      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto bg-[#f3f2f3] p-2 md:snap-none">
+      <div className="flex h-[calc(100vh-94px)] snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden border-t border-odoo-border-light bg-white md:snap-none">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragCancel={() => setActiveLead(null)} onDragEnd={onDragEnd}>
           {group === "stage"
             ? stages.map((stage) => (
@@ -731,11 +740,11 @@ export function KanbanPage() {
                 />
               ))
             : groupColumns.map((col) => (
-                <div key={col.key} className="w-[250px] shrink-0">
+                <div key={col.key} className="flex h-full w-[260px] shrink-0 flex-col border-r border-odoo-border-light">
                   <div className="mb-2 text-[13px] font-semibold">
                     {col.title} <span className="font-normal text-odoo-text-muted">{col.items.length}</span>
                   </div>
-                  <div className="flex min-h-[200px] flex-col border border-odoo-border-light bg-white">
+                  <div className="flex min-h-0 flex-1 flex-col bg-white">
                     {col.items.map((lead) => (
                       <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="overflow-hidden border-b border-odoo-border-light bg-white px-2 py-1.5 hover:bg-[#faf8f9]">
                         <LeadCardBody lead={lead} />
