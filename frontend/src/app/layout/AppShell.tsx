@@ -50,7 +50,7 @@ export function ControlPanel({
         {onCreate && (
           <button
             type="button"
-            className="h-[32px] rounded-[3px] border border-transparent px-3 py-[6px] text-[13px] font-semibold leading-[18px] text-white hover:opacity-90"
+            className="rounded-md px-3 py-1 text-[13px] font-medium text-white hover:opacity-90"
             style={{ backgroundColor: "#714B67" }}
             onClick={onCreate}
           >
