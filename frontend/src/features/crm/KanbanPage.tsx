@@ -15,7 +15,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, GripVertical, MoreHorizontal, Plus } from "lucide-react";
+import { ChevronDown, MoreHorizontal, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
@@ -104,7 +104,7 @@ function LeadCardBody({ lead }: { lead: Lead }) {
 }
 
 function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `lead-${lead.id}`,
     disabled: isOverlay,
   });
@@ -129,17 +129,14 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
   if (isOverlay) return inner;
 
   return (
-    <div ref={setNodeRef} style={style} className="relative">
-      <button
-        ref={setActivatorNodeRef}
-        type="button"
-        {...attributes}
-        {...listeners}
-        className="absolute bottom-2 right-9 z-10 rounded p-1 text-odoo-text-light hover:bg-odoo-bg hover:text-odoo-text"
-        aria-label={`Переместить ${lead.name}`}
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </button>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="touch-none"
+      aria-label={`Переместить ${lead.name}`}
+    >
       {isDragging ? (
         inner
       ) : (
