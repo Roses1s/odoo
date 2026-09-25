@@ -96,7 +96,7 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
   const revenue = Number(lead.expected_revenue || 0);
 
   return (
-    <div className="flex min-h-[116px] flex-col">
+    <div className="flex flex-col">
       <div className={menuSpace ? "pr-7" : ""}>
         <h3
           className="line-clamp-2 text-[13px] font-semibold leading-[1.25rem] text-odoo-text"
@@ -130,7 +130,7 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
         </div>
       )}
 
-      <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+      <div className="mt-1.5 flex items-end justify-between gap-2">
         <StarRating value={lead.priority} />
         <span
           title={lead.assigned_to_email || "Не назначен"}
