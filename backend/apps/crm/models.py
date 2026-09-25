@@ -1,6 +1,7 @@
 import hashlib
 
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
 from django.core.exceptions import ValidationError
 from django.db import connection, models, transaction
 from simple_history.models import HistoricalRecords
@@ -71,6 +72,21 @@ class Lead(TimeStampedModel):
         indexes = [
             models.Index(fields=["is_archived", "stage"], name="crm_lead_arch_stage_idx"),
             models.Index(fields=["name"], name="crm_lead_name_idx"),
+            GinIndex(
+                fields=["name"],
+                name="crm_lead_name_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["logist_email"],
+                name="crm_lead_email_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["logist_contact"],
+                name="crm_lead_phone_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
         ]
 
     def __str__(self) -> str:
