@@ -132,11 +132,10 @@ docker compose logs -f backend
 - http://crmdetroid.ru/login  
 - или http://77.222.38.191/login  
 
-Войти:
+Войти под заранее созданным production-администратором. Пароль не хранится в Git
+и не должен передаваться в командной строке без безопасного quoting.
 
-- `admin@crm.local` / `Admin123!`
-
-**Сразу смените пароли** в админке.
+Demo seed (`SEED=1`) в production не включать.
 
 ---
 

@@ -1,6 +1,8 @@
+import hashlib
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import connection, models, transaction
 from simple_history.models import HistoricalRecords
 
 from apps.core.models import TimeStampedModel
@@ -83,8 +85,21 @@ class Lead(TimeStampedModel):
                     raise ValidationError({"inn": "Уже есть активный лид с этим ИНН"})
 
     def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
+        # Serialize writes for the same INN in PostgreSQL. A database constraint cannot
+        # express the existing rule because it depends on the related Stage.is_closed.
+        # The lock closes the race between validation and INSERT/UPDATE.
+        normalized_inn = "".join(ch for ch in (self.inn or "") if ch.isdigit())
+        with transaction.atomic():
+            if normalized_inn and connection.vendor == "postgresql":
+                lock_key = int.from_bytes(
+                    hashlib.blake2b(normalized_inn.encode(), digest_size=8).digest(),
+                    byteorder="big",
+                    signed=True,
+                )
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT pg_advisory_xact_lock(%s)", [lock_key])
+            self.full_clean()
+            return super().save(*args, **kwargs)
 
 
 class Note(models.Model):

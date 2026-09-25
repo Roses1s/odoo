@@ -28,11 +28,10 @@ docker compose up --build
 
 ### Демо-пользователи
 
-| Email | Пароль | Роль |
-|--------|--------|------|
-| admin@crm.local | Admin123! | admin |
-| manager@crm.local | Manager123! | manager |
-| operator@crm.local | Operator123! | operator |
+Демо-пользователи создаются только при `SEED=1`. Их пароли не хранятся в Git:
+перед запуском задайте `DEMO_ADMIN_PASSWORD`, `DEMO_MANAGER_PASSWORD` и
+`DEMO_OPERATOR_PASSWORD` в локальном `.env`. В production используйте уникальные
+реквизиты и не включайте demo seed.
 
 Локально без Docker:
 

@@ -36,19 +36,29 @@ cp -a "$ENV_BAK" .env
 echo "==> docker compose up --build"
 "${COMPOSE[@]}" up -d --build
 
-echo "==> ждём backend (до ~90 с)"
+echo "==> ждём readiness backend (до ~90 с)"
+BACKEND_READY=0
 for i in $(seq 1 18); do
-  if "${COMPOSE[@]}" exec -T backend python -c "import socket; socket.create_connection(('127.0.0.1', 8000), 2).close()" 2>/dev/null; then
-    echo "    backend отвечает"
+  if "${COMPOSE[@]}" exec -T backend python -c \
+    "import json, urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=3); data=json.load(r); raise SystemExit(0 if r.status == 200 and data.get('status') == 'ok' else 1)" \
+    2>/dev/null; then
+    echo "    backend и БД готовы"
+    BACKEND_READY=1
     break
   fi
   sleep 5
-  if [[ "$i" -eq 18 ]]; then
-    echo "    backend не ответил, перезапуск nginx всё равно"
-  fi
 done
 
-"${COMPOSE[@]}" up -d --no-deps nginx || true
+if [[ "$BACKEND_READY" -ne 1 ]]; then
+  echo "ОШИБКА: backend не прошёл readiness. Релиз не завершён." >&2
+  "${COMPOSE[@]}" ps >&2 || true
+  "${COMPOSE[@]}" logs --tail 40 backend >&2 || true
+  exit 1
+fi
+
+# Nginx resolves Docker upstream addresses only at startup. Recreate it after a
+# successful backend readiness check to avoid a stale upstream and false 502.
+"${COMPOSE[@]}" up -d --no-deps --force-recreate nginx
 "${COMPOSE[@]}" ps
 
 echo

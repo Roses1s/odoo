@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
@@ -10,6 +12,8 @@ from drf_spectacular.views import (
 
 from apps.users.permissions import IsAdmin
 
+logger = logging.getLogger(__name__)
+
 
 def health(_request):
     from django.db import connection
@@ -17,8 +21,9 @@ def health(_request):
     try:
         connection.ensure_connection()
         db = "ok"
-    except Exception as exc:  # noqa: BLE001
-        return JsonResponse({"status": "degraded", "db": str(exc)}, status=503)
+    except Exception:  # noqa: BLE001
+        logger.exception("Health check database probe failed")
+        return JsonResponse({"status": "degraded", "db": "unavailable"}, status=503)
     return JsonResponse({"status": "ok", "db": db})
 
 

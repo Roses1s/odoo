@@ -1,8 +1,25 @@
+from django.core.exceptions import ImproperlyConfigured
+
 from .base import *  # noqa: F403
 from .base import env
 
 DEBUG = False
 USE_HTTPS = env.bool("USE_HTTPS", default=False)
+
+# Production must never silently use the development signing key or database credentials.
+_INSECURE_SECRET_KEYS = {
+    "",
+    "insecure-dev-key-change-me-min-50-characters-long",
+    "change-me-in-production-min-50-chars-please-rotate",
+}
+if SECRET_KEY in _INSECURE_SECRET_KEYS or len(SECRET_KEY) < 50:  # noqa: F405
+    raise ImproperlyConfigured(
+        "Production SECRET_KEY must be set and contain at least 50 characters"
+    )
+
+_database = DATABASES["default"]  # noqa: F405
+if not _database.get("PASSWORD") or _database.get("PASSWORD") == "crm_secure_password":
+    raise ImproperlyConfigured("Production database password must be set to a non-default value")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
