@@ -96,10 +96,10 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
   const revenue = Number(lead.expected_revenue || 0);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className={menuSpace ? "pr-7" : ""}>
         <h3
-          className="line-clamp-2 text-[13px] font-semibold leading-[1.25rem] text-odoo-text"
+          className="line-clamp-2 text-[13px] font-semibold leading-4 text-odoo-text"
           title={title}
         >
           {title}
@@ -115,7 +115,7 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
       </div>
 
       {lead.tags?.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
+        <div className="mt-1.5 flex min-h-4 flex-nowrap gap-1 overflow-hidden">
           {lead.tags.map((tag) => (
             <span
               key={tag.id}
@@ -130,7 +130,7 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
         </div>
       )}
 
-      <div className="mt-1.5 flex items-end justify-between gap-2">
+      <div className="mt-auto flex shrink-0 items-end justify-between gap-2 pt-1.5">
         <StarRating value={lead.priority} />
         <span
           title={lead.assigned_to_email || "Не назначен"}
@@ -155,7 +155,7 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
 
   const inner = (
     <div
-      className={`rounded border bg-white p-2.5 ${
+      className={`h-[120px] overflow-hidden rounded border bg-white p-2.5 ${
         isOverlay
           ? "w-[260px] cursor-grabbing border-odoo-primary shadow-lg"
           : isDragging
@@ -726,7 +726,7 @@ export function KanbanPage() {
                   </div>
                   <div className="flex min-h-[200px] flex-col gap-2 rounded bg-[#F0F0F0] p-2">
                     {col.items.map((lead) => (
-                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="rounded border border-odoo-border-light bg-white p-2.5 shadow-sm">
+                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="h-[120px] overflow-hidden rounded border border-odoo-border-light bg-white p-2.5 shadow-sm">
                         <LeadCardBody lead={lead} />
                       </Link>
                     ))}
