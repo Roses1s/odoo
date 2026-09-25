@@ -28,6 +28,8 @@ def daily_backup() -> str:
         from apps.notifications.services import notify
 
         for admin in User.objects.filter(role="admin", is_active=True):
-            notify(admin, "Ошибка бэкапа", result.stderr or "backup failed")
-        return f"backup failed: {result.stderr}"
+            notify(admin, "Ошибка бэкапа", "Резервная копия не создана. Проверьте журнал Celery.")
+        # Celery monitoring and retries must see a failed task, not a successful
+        # result containing an error string. Keep stderr in worker logs only.
+        raise RuntimeError(f"backup failed: {result.stderr.strip() or 'unknown error'}")
     return result.stdout.strip() or "ok"
