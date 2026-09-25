@@ -60,7 +60,7 @@ function initials(email?: string) {
 
 function StarRating({ value, onChange }: { value: number; onChange?: (n: number) => void }) {
   return (
-    <span className="text-[12px] tracking-tight text-odoo-warning" aria-label={`Приоритет: ${value} из 3`}>
+    <span className="text-[15px] leading-none tracking-tight text-odoo-warning" aria-label={`Приоритет: ${value} из 3`}>
       {[1, 2, 3].map((n) =>
         onChange ? (
           <button
@@ -94,19 +94,19 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className={menuSpace ? "pr-7" : ""}>
         <h3
-          className="line-clamp-3 text-[13px] font-medium leading-[18px] text-odoo-text"
+          className="line-clamp-3 text-[15px] font-medium leading-5 text-odoo-text"
           title={title}
         >
           {title}
         </h3>
         <p
-          className="mt-0.5 truncate text-[11px] text-odoo-text-muted"
+          className="mt-0.5 truncate text-[13px] leading-[18px] text-odoo-text-muted"
           title={lead.logist_contact || lead.name}
         >
           {lead.logist_contact || lead.name}
         </p>
         {revenue > 0 && (
-          <p className="mt-1 text-[12px] font-medium text-odoo-text">{formatMoney(revenue)}</p>
+          <p className="mt-1 text-[13px] font-medium text-odoo-text">{formatMoney(revenue)}</p>
         )}
       </div>
 
@@ -116,7 +116,7 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
             <span
               key={tag.id}
               title={tag.name}
-              className="inline-flex max-w-full items-center rounded-full bg-[#eeeaea] px-2 py-0.5 text-[10px] font-normal leading-none text-[#6f666a]"
+              className="inline-flex max-w-full items-center rounded-full bg-[#eeeaea] px-2 py-0.5 text-[11px] font-normal leading-[14px] text-[#6f666a]"
             >
               <span className="max-w-[150px] truncate">{tag.name}</span>
             </span>
@@ -128,12 +128,12 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
         <div className="flex items-center gap-1.5">
           <StarRating value={lead.priority} />
           <span title="Активности пока не подключены" className="text-odoo-text-muted">
-            <Clock3 className="h-3.5 w-3.5" />
+            <Clock3 className="h-4 w-4" />
           </span>
         </div>
         <span
           title={lead.assigned_to_email || "Не назначен"}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-odoo-primary text-[8px] font-semibold text-white"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-odoo-primary text-[9px] font-semibold text-white"
         >
           {initials(lead.assigned_to_email)}
         </span>
@@ -154,9 +154,9 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
 
   const inner = (
     <div
-      className={`overflow-hidden border-b border-odoo-border-light bg-white px-2 py-1.5 ${
+      className={`overflow-hidden border-b border-odoo-border-light bg-white px-2.5 py-2 ${
         isOverlay
-          ? "w-[250px] cursor-grabbing rounded border border-odoo-primary shadow-lg"
+          ? "w-[325px] cursor-grabbing rounded border border-odoo-primary shadow-lg"
           : isDragging
             ? "cursor-grabbing opacity-25"
             : "cursor-grab hover:bg-[#faf8f9]"
@@ -325,14 +325,14 @@ function Column({
   }
 
   return (
-    <div className="flex h-full w-[min(100vw-1rem,260px)] shrink-0 snap-center flex-col border-r border-odoo-border-light bg-white md:w-[260px]">
-      <div className="shrink-0 bg-[#faf9fa] px-2 pb-1.5 pt-1.5">
+    <div className="flex h-full w-[min(100vw-1rem,325px)] shrink-0 snap-center flex-col border-r border-odoo-border-light bg-white md:w-[325px]">
+      <div className="shrink-0 bg-[#faf9fa] px-2.5 pb-2 pt-2">
         <div className="flex items-start justify-between gap-1">
           <div className="min-w-0">
             {editing && canManage ? (
               <input
                 autoFocus
-                className="w-full rounded border border-odoo-primary px-1 text-[13px] font-semibold"
+                className="w-full rounded border border-odoo-primary px-1 text-[15px] font-semibold"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onBlur={() => {
@@ -344,7 +344,7 @@ function Column({
                 }}
               />
             ) : (
-              <button type="button" className="truncate text-[13px] font-semibold text-odoo-text" onDoubleClick={() => canManage && setEditing(true)}>
+              <button type="button" className="truncate text-[15px] font-semibold leading-5 text-odoo-text" onDoubleClick={() => canManage && setEditing(true)}>
                 {stage.name}
                 <span className="ml-1 font-normal text-odoo-text-muted">{leads.length}</span>
               </button>
@@ -405,7 +405,7 @@ function Column({
           </div>
         </div>
         <div className="mt-1 flex items-center justify-between gap-2">
-          <div className="h-2.5 w-[124px] overflow-hidden bg-[#dedcdf]">
+          <div className="h-2.5 w-[150px] overflow-hidden bg-[#dedcdf]">
             <div
               className="h-full min-w-1"
               style={{
@@ -414,7 +414,7 @@ function Column({
               }}
             />
           </div>
-          <span className="truncate text-[11px] font-semibold text-odoo-text">
+          <span className="truncate text-[13px] font-semibold text-odoo-text">
             {formatStageTotal(leads.reduce((sum, lead) => sum + Number(lead.expected_revenue || 0), 0))}
           </span>
         </div>
@@ -429,7 +429,7 @@ function Column({
         {quick ? (
           <QuickCreate stageId={stage.id} onDone={() => setQuick(false)} />
         ) : (
-          <button type="button" className="flex items-center gap-1 px-2 py-1.5 text-[12px] text-odoo-text-muted hover:text-odoo-text" onClick={() => setQuick(true)}>
+          <button type="button" className="flex items-center gap-1 px-2.5 py-2 text-[13px] text-odoo-text-muted hover:text-odoo-text" onClick={() => setQuick(true)}>
             <Plus className="h-3.5 w-3.5" /> Добавить
           </button>
         )}
@@ -740,13 +740,13 @@ export function KanbanPage() {
                 />
               ))
             : groupColumns.map((col) => (
-                <div key={col.key} className="flex h-full w-[260px] shrink-0 flex-col border-r border-odoo-border-light">
+                <div key={col.key} className="flex h-full w-[325px] shrink-0 flex-col border-r border-odoo-border-light">
                   <div className="mb-2 text-[13px] font-semibold">
                     {col.title} <span className="font-normal text-odoo-text-muted">{col.items.length}</span>
                   </div>
                   <div className="flex min-h-0 flex-1 flex-col bg-white">
                     {col.items.map((lead) => (
-                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="overflow-hidden border-b border-odoo-border-light bg-white px-2 py-1.5 hover:bg-[#faf8f9]">
+                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="overflow-hidden border-b border-odoo-border-light bg-white px-2.5 py-2 hover:bg-[#faf8f9]">
                         <LeadCardBody lead={lead} />
                       </Link>
                     ))}
