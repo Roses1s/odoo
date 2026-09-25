@@ -40,7 +40,7 @@ echo "==> ждём readiness backend (до ~90 с)"
 BACKEND_READY=0
 for i in $(seq 1 18); do
   if "${COMPOSE[@]}" exec -T backend python -c \
-    "import json, urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=3); data=json.load(r); raise SystemExit(0 if r.status == 200 and data.get('status') == 'ok' else 1)" \
+    "import json, urllib.request; req=urllib.request.Request('http://127.0.0.1:8000/api/health/', headers={'X-Forwarded-Proto': 'https'}); r=urllib.request.urlopen(req, timeout=3); data=json.load(r); raise SystemExit(0 if r.status == 200 and data.get('status') == 'ok' else 1)" \
     2>/dev/null; then
     echo "    backend и БД готовы"
     BACKEND_READY=1
