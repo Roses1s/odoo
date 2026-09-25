@@ -4,7 +4,6 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Case, IntegerField, Value, When
 from rest_framework import serializers, status, viewsets
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -31,16 +30,18 @@ class AdminUserSerializer(serializers.ModelSerializer):
             "is_staff",
             "password",
         )
+        read_only_fields = ("is_staff",)
 
     def create(self, validated_data):
         password = validated_data.pop("password", None)
         if not password:
             raise serializers.ValidationError({"password": "Укажите пароль"})
-        user = User.objects.create_user(password=password, **validated_data)
-        if user.role == User.Role.ADMIN:
-            user.is_staff = True
-            user.save(update_fields=["is_staff"])
-        return user
+        role = validated_data.get("role", User.Role.OPERATOR)
+        return User.objects.create_user(
+            password=password,
+            is_staff=role in (User.Role.ADMIN, User.Role.MANAGER),
+            **validated_data,
+        )
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
@@ -48,6 +49,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
             setattr(instance, k, v)
         if password:
             instance.set_password(password)
+        instance.is_staff = instance.role in (User.Role.ADMIN, User.Role.MANAGER)
         instance.save()
         return instance
 
@@ -67,13 +69,6 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdmin]
     search_fields = ("email", "first_name", "last_name")
     filterset_fields = ("role", "is_active")
-
-    def perform_update(self, serializer):
-        role = serializer.validated_data.get("role", serializer.instance.role)
-        extra = {}
-        if role == User.Role.ADMIN:
-            extra["is_staff"] = True
-        serializer.save(**extra)
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()

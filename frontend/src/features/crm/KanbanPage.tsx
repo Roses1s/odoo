@@ -15,7 +15,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, MoreHorizontal, Plus } from "lucide-react";
+import { ChevronDown, GripVertical, MoreHorizontal, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
@@ -129,11 +129,19 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
   if (isOverlay) return inner;
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes} className="relative">
+      <button
+        type="button"
+        {...listeners}
+        className="absolute bottom-2 right-9 z-10 rounded p-1 text-odoo-text-light hover:bg-odoo-bg hover:text-odoo-text"
+        aria-label={`Переместить ${lead.name}`}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
       {isDragging ? (
         inner
       ) : (
-        <Link to={`/crm/leads/${lead.id}`} onClick={(e) => e.stopPropagation()} className="block">
+        <Link to={`/crm/leads/${lead.id}`} className="block">
           {inner}
         </Link>
       )}
@@ -377,6 +385,7 @@ export function KanbanPage() {
   const [stageName, setStageName] = useState("");
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [moveError, setMoveError] = useState("");
   const [folded, setFolded] = useState<number[]>(() => {
     try {
       return JSON.parse(localStorage.getItem("crm-folded-stages") || "[]");
@@ -421,19 +430,30 @@ export function KanbanPage() {
   const leadsQ = useQuery({
     queryKey: ["leads", priority, search, stageF, tagF, archived],
     queryFn: async () => {
-      const q = new URLSearchParams({ page_size: "200" });
+      const q = new URLSearchParams({ page_size: "500" });
       if (priority) q.set("priority", priority);
       if (search) q.set("search", search);
       if (stageF) q.set("stage", stageF);
       if (tagF) q.set("tags", tagF);
       if (archived) q.set("is_archived", archived);
-      return results<Lead>((await api.get(`/crm/leads/?${q}`)).data);
+
+      const all: Lead[] = [];
+      let url: string | null = `/crm/leads/?${q}`;
+      while (url) {
+        const response: { data: { results?: Lead[]; next?: string | null } | Lead[] } = await api.get(url);
+        all.push(...results<Lead>(response.data));
+        if (Array.isArray(response.data) || !response.data.next) break;
+        const next = new URL(response.data.next, window.location.origin);
+        url = `${next.pathname.replace(/^\/api/, "")}${next.search}`;
+      }
+      return all;
     },
   });
 
   const moveLead = useMutation({
     mutationFn: ({ id, stage }: { id: number; stage: number }) => api.patch(`/crm/leads/${id}/`, { stage }),
     onMutate: async ({ id, stage }) => {
+      setMoveError("");
       await qc.cancelQueries({ queryKey: ["leads"] });
       const key = ["leads", priority, search, stageF, tagF, archived];
       const prev = qc.getQueryData<Lead[]>(key);
@@ -442,6 +462,7 @@ export function KanbanPage() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(ctx.key, ctx.prev);
+      setMoveError("Не удалось переместить лид. Изменение отменено.");
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["leads"] }),
   });
@@ -566,6 +587,12 @@ export function KanbanPage() {
           </div>
         )}
       </ControlPanel>
+
+      {moveError && (
+        <div role="alert" className="mx-4 mt-3 rounded border border-odoo-danger/30 bg-red-50 px-3 py-2 text-sm text-odoo-danger">
+          {moveError}
+        </div>
+      )}
 
       {leads.length === 0 && !leadsQ.isLoading && (
         <div className="px-4 pt-10 text-center text-sm text-odoo-text-muted">

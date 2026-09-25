@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
+import { useAuthStore } from "@/features/auth/store";
 import { api } from "@/shared/api/client";
 import { apiErrorMessage } from "@/shared/lib/http";
 import { innChecksumOk, normalizeInn } from "@/shared/lib/inn";
@@ -72,6 +73,8 @@ export function LeadFormPage() {
   const isNew = id === "new" || !id;
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const canManage = user?.role === "admin" || user?.role === "manager";
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
 
@@ -151,7 +154,12 @@ export function LeadFormPage() {
       qc.invalidateQueries({ queryKey: ["leads"] });
       navigate("/crm");
     },
+    onError: (e: unknown) => setError(apiErrorMessage(e, "Не удалось архивировать лид")),
   });
+
+  const hasMaskedFields = [form.inn, form.logist_email, form.logist_contact].some((value) =>
+    value.includes("*"),
+  );
 
   return (
     <AppShell>
@@ -159,12 +167,18 @@ export function LeadFormPage() {
         <Button variant="secondary" onClick={() => navigate("/crm")}>
           Назад
         </Button>
-        {!isNew && (
-          <Button variant="ghost" onClick={() => archive.mutate()}>
+        {!isNew && canManage && (
+          <Button
+            variant="ghost"
+            disabled={archive.isPending}
+            onClick={() => {
+              if (window.confirm(`Архивировать лид «${form.name}»?`)) archive.mutate();
+            }}
+          >
             Архив
           </Button>
         )}
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button onClick={() => save.mutate()} disabled={save.isPending || hasMaskedFields}>
           Сохранить
         </Button>
       </ControlPanel>
@@ -173,10 +187,7 @@ export function LeadFormPage() {
           <Statusbar
             stages={stagesQ.data ?? []}
             current={form.stage}
-            onSelect={(sid) => {
-              set("stage", sid);
-              if (!isNew) void api.patch(`/crm/leads/${id}/`, { stage: sid }).then(() => qc.invalidateQueries({ queryKey: ["leads"] }));
-            }}
+            onSelect={(sid) => set("stage", sid)}
           />
           {leadQ.isLoading && !isNew ? (
             <div className="mt-6">
@@ -185,6 +196,11 @@ export function LeadFormPage() {
           ) : (
             <div className="mt-6 max-w-3xl">
               {error && <p className="mb-3 text-sm text-odoo-danger">{error}</p>}
+              {hasMaskedFields && (
+                <p className="mb-3 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  Часть данных скрыта по вашей роли. Маскированные значения нельзя сохранять.
+                </p>
+              )}
               <FormSection title="Основная информация">
                 <label>
                   <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Название компании</span>

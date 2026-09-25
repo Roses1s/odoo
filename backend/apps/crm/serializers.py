@@ -87,10 +87,19 @@ class LeadSerializer(serializers.ModelSerializer):
         data["logist_contact"] = MaskedPhoneField().to_representation(instance.logist_contact or "")
         return data
 
-    def validate_inn(self, value: str) -> str:
-        return validate_inn(value)
-
     def validate_logist_contact(self, value: str) -> str:
         if not value:
             return value
+        if "*" in value:
+            raise serializers.ValidationError("Маскированное значение нельзя сохранять")
         return normalize_phone(value)
+
+    def validate_inn(self, value: str) -> str:
+        if "*" in value:
+            raise serializers.ValidationError("Маскированное значение нельзя сохранять")
+        return validate_inn(value)
+
+    def validate_logist_email(self, value: str | None) -> str | None:
+        if value and "*" in value:
+            raise serializers.ValidationError("Маскированное значение нельзя сохранять")
+        return value

@@ -46,7 +46,7 @@ export function ControlPanel({
 }) {
   return (
     <div className="sticky top-12 z-30 border-b border-odoo-border-light bg-white">
-      <div className="relative flex min-h-[46px] items-center gap-2 px-3">
+      <div className="relative flex min-h-[46px] flex-wrap items-center gap-2 px-3 py-1 md:flex-nowrap md:py-0">
         {onCreate && (
           <button
             type="button"
@@ -64,8 +64,8 @@ export function ControlPanel({
           </button>
         )}
         {onSearch && (
-          <div className="pointer-events-none absolute inset-x-0 flex justify-center">
-            <label className="pointer-events-auto flex h-8 w-[min(100%,420px)] items-center gap-2 rounded-md border border-odoo-border bg-white px-2.5 shadow-sm">
+          <div className="pointer-events-none order-last flex w-full justify-center md:absolute md:inset-x-0 md:order-none md:w-auto">
+            <label className="pointer-events-auto flex h-8 w-full items-center gap-2 rounded-md border border-odoo-border bg-white px-2.5 shadow-sm md:w-[min(100%,420px)]">
               <Search className="h-3.5 w-3.5 shrink-0 text-odoo-text-light" />
               <input
                 value={search}

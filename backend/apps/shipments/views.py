@@ -1,4 +1,4 @@
-from rest_framework import serializers, status, viewsets
+from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -30,7 +30,9 @@ class ShipmentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = Shipment.objects.select_related("lead", "carrier", "created_by")
         user = self.request.user
-        if user.role in ("admin", "manager") and self.request.query_params.get("all") == "true":
+        if user.role in ("admin", "manager"):
+            if self.request.query_params.get("mine") == "true":
+                return qs.filter(created_by=user)
             return qs
         return qs.filter(created_by=user)
 

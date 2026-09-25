@@ -30,6 +30,37 @@ def test_operator_sees_only_own_leads(api, stage):
 
 
 @pytest.mark.django_db
+def test_operator_loses_access_after_reassignment(api, stage):
+    operator = User.objects.create_user(email="op@t.local", password="x", role="operator")
+    other = User.objects.create_user(email="other@t.local", password="x", role="operator")
+    lead = Lead.objects.create(
+        name="Created here",
+        inn="7707083893",
+        stage=stage,
+        assigned_to=operator,
+        created_by=operator,
+    )
+    lead.assigned_to = other
+    lead.save()
+
+    api.force_authenticate(operator)
+    assert api.get(f"/api/crm/leads/{lead.id}/").status_code == 404
+    assert api.patch(f"/api/crm/leads/{lead.id}/", {"name": "Changed"}).status_code == 404
+
+
+@pytest.mark.django_db
+def test_masked_values_cannot_be_written(api, stage):
+    operator = User.objects.create_user(email="op-mask@t.local", password="x", role="operator")
+    lead = Lead.objects.create(name="Mine", inn="7707083893", stage=stage, assigned_to=operator)
+    api.force_authenticate(operator)
+
+    response = api.patch(f"/api/crm/leads/{lead.id}/", {"inn": "77****3893"})
+    assert response.status_code == 400
+    lead.refresh_from_db()
+    assert lead.inn == "7707083893"
+
+
+@pytest.mark.django_db
 def test_operator_cannot_delete(api, stage):
     op = User.objects.create_user(email="op@t.local", password="x", role="operator")
     lead = Lead.objects.create(name="Mine", inn="7707083893", stage=stage, assigned_to=op)

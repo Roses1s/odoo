@@ -68,6 +68,10 @@ class Lead(TimeStampedModel):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["is_archived", "stage"], name="crm_lead_arch_stage_idx"),
+            models.Index(fields=["name"], name="crm_lead_name_idx"),
+        ]
 
     def __str__(self) -> str:
         return self.name

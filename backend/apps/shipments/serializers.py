@@ -55,6 +55,10 @@ class ShipmentSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = ("created_by", "created_at", "updated_at")
+        extra_kwargs = {
+            "contact_loading_name": {"required": False, "allow_blank": True},
+            "contact_loading_phone": {"required": False, "allow_blank": True},
+        }
 
     def get_route(self, obj) -> str:
         return f"{obj.city_loading} → {obj.city_unloading}"

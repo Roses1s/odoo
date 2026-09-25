@@ -8,7 +8,12 @@ from rest_framework.response import Response
 from apps.crm.filters import LeadFilter
 from apps.crm.models import Lead, Note, Stage, Tag
 from apps.crm.notes import NoteSerializer
-from apps.crm.serializers import LeadSerializer, StageReorderSerializer, StageSerializer, TagSerializer
+from apps.crm.serializers import (
+    LeadSerializer,
+    StageReorderSerializer,
+    StageSerializer,
+    TagSerializer,
+)
 from apps.users.permissions import IsLeadOwnerOrManager, IsManagerOrAbove, IsManagerOrReadOnly
 
 
@@ -25,7 +30,7 @@ class StageViewSet(viewsets.ModelViewSet):
         return Stage.objects.annotate(
             leads_count=Count("leads"),
             revenue_sum=Sum("leads__expected_revenue"),
-        )
+        ).order_by("sequence", "id")
 
     def destroy(self, request, *args, **kwargs):
         stage = self.get_object()
@@ -85,7 +90,9 @@ class LeadViewSet(viewsets.ModelViewSet):
         qs = Lead.objects.select_related("stage", "assigned_to", "created_by").prefetch_related("tags")
         user = self.request.user
         if user.role == "operator":
-            qs = qs.filter(Q(assigned_to=user) | Q(created_by=user))
+            # Assignment is the source of truth for current access. created_by is
+            # audit metadata and must not retain access after reassignment.
+            qs = qs.filter(assigned_to=user)
         if self.request.query_params.get("is_archived") is None:
             qs = qs.filter(is_archived=False)
         search = self.request.query_params.get("search")

@@ -46,3 +46,24 @@ def test_login_wrong_password(api, admin_user):
 def test_me_requires_auth(api):
     res = api.get("/api/auth/me/")
     assert res.status_code == 401
+
+
+@pytest.mark.django_db
+def test_admin_api_keeps_staff_in_sync_with_role(api):
+    admin = User.objects.create_user(
+        email="root@test.local", password="x", role=User.Role.ADMIN, is_staff=True
+    )
+    managed = User.objects.create_user(
+        email="managed@test.local", password="x", role=User.Role.ADMIN, is_staff=True
+    )
+    api.force_authenticate(admin)
+
+    response = api.patch(
+        f"/api/admin/users/{managed.id}/",
+        {"role": User.Role.OPERATOR, "is_staff": True},
+        format="json",
+    )
+    assert response.status_code == 200
+    managed.refresh_from_db()
+    assert managed.role == User.Role.OPERATOR
+    assert managed.is_staff is False
