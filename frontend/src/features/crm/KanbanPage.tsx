@@ -15,7 +15,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, MoreHorizontal, MoreVertical, Plus } from "lucide-react";
+import { ChevronDown, Clock3, MoreHorizontal, MoreVertical, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
@@ -82,15 +82,6 @@ function StarRating({ value, onChange }: { value: number; onChange?: (n: number)
   );
 }
 
-const TAG_STYLES: Record<string, string> = {
-  blue: "bg-odoo-tag-blue-bg text-odoo-tag-blue-text",
-  green: "bg-odoo-tag-green-bg text-odoo-tag-green-text",
-  red: "bg-odoo-tag-red-bg text-odoo-tag-red-text",
-  yellow: "bg-odoo-tag-yellow-bg text-odoo-tag-yellow-text",
-  purple: "bg-odoo-tag-purple-bg text-odoo-tag-purple-text",
-  orange: "bg-odoo-tag-orange-bg text-odoo-tag-orange-text",
-};
-
 function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boolean }) {
   const title = `${lead.name} — ${lead.inn}`;
   const revenue = Number(lead.expected_revenue || 0);
@@ -120,9 +111,7 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
             <span
               key={tag.id}
               title={tag.name}
-              className={`inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-none ${
-                TAG_STYLES[tag.color] || TAG_STYLES.blue
-              }`}
+              className="inline-flex max-w-full items-center rounded-full bg-[#eeeaea] px-2 py-0.5 text-[10px] font-normal leading-none text-[#6f666a]"
             >
               <span className="max-w-[150px] truncate">{tag.name}</span>
             </span>
@@ -130,11 +119,16 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
         </div>
       )}
 
-      <div className="mt-auto flex shrink-0 items-end justify-between gap-2 pt-1.5">
-        <StarRating value={lead.priority} />
+      <div className="mt-1 flex shrink-0 items-end justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <StarRating value={lead.priority} />
+          <span title="Активности пока не подключены" className="text-odoo-text-muted">
+            <Clock3 className="h-3.5 w-3.5" />
+          </span>
+        </div>
         <span
           title={lead.assigned_to_email || "Не назначен"}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-odoo-primary text-[9px] font-semibold text-white shadow-sm"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-odoo-primary text-[8px] font-semibold text-white"
         >
           {initials(lead.assigned_to_email)}
         </span>
@@ -155,12 +149,12 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
 
   const inner = (
     <div
-      className={`h-[120px] overflow-hidden rounded border bg-white p-2.5 ${
+      className={`overflow-hidden border-b border-odoo-border-light bg-white px-2 py-1.5 ${
         isOverlay
-          ? "w-[260px] cursor-grabbing border-odoo-primary shadow-lg"
+          ? "w-[250px] cursor-grabbing rounded border border-odoo-primary shadow-lg"
           : isDragging
-            ? "cursor-grabbing border-odoo-border-light opacity-25"
-            : "cursor-grab border-odoo-border-light shadow-sm hover:shadow"
+            ? "cursor-grabbing opacity-25"
+            : "cursor-grab hover:bg-[#faf8f9]"
       }`}
     >
       <LeadCardBody lead={lead} menuSpace={!isOverlay} />
@@ -175,7 +169,7 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
       style={style}
       {...attributes}
       {...listeners}
-      className="relative touch-none"
+      className="group relative touch-none"
       aria-label={`Переместить ${lead.name}`}
     >
       {!isDragging && (
@@ -184,7 +178,7 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
             type="button"
             aria-label="Меню карточки"
             title="Меню"
-            className="rounded p-1 text-odoo-text-light hover:bg-odoo-bg hover:text-odoo-text"
+            className="rounded p-1 text-odoo-text-light opacity-0 hover:bg-odoo-bg hover:text-odoo-text focus:opacity-100 group-hover:opacity-100"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.preventDefault();
@@ -243,7 +237,7 @@ function QuickCreate({ stageId, onDone }: { stageId: number; onDone: () => void 
   });
   return (
     <form
-      className="rounded border border-odoo-primary bg-white p-2"
+      className="m-1 rounded border border-odoo-primary bg-white p-2"
       onSubmit={(e) => {
         e.preventDefault();
         if (name.trim() && inn.trim()) create.mutate();
@@ -326,9 +320,9 @@ function Column({
   }
 
   return (
-    <div className="flex w-[min(100vw-2rem,280px)] shrink-0 snap-center flex-col md:w-[280px]">
-      <div className="mb-1 rounded-t border-x border-t border-odoo-border-light bg-white px-2 py-1.5" style={{ borderTop: `3px solid ${color}` }}>
-        <div className="flex items-start justify-between">
+    <div className="flex w-[min(100vw-1rem,250px)] shrink-0 snap-center flex-col md:w-[250px]">
+      <div className="border-x border-t border-odoo-border-light bg-[#f8f7f8] px-2 pb-1.5 pt-1.5">
+        <div className="flex items-start justify-between gap-1">
           <div className="min-w-0">
             {editing && canManage ? (
               <input
@@ -352,7 +346,15 @@ function Column({
             )}
             <div className="text-[11px] text-odoo-text-muted">{formatMoney(leads.reduce((s, l) => s + Number(l.expected_revenue || 0), 0))}</div>
           </div>
-          <div className="relative flex items-center">
+          <div className="relative flex items-center gap-0.5">
+            <button
+              type="button"
+              className="p-0.5 text-odoo-text-muted hover:text-odoo-text"
+              onClick={() => setQuick(true)}
+              title="Добавить лид"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
             <button type="button" className="p-0.5 text-odoo-text-muted hover:text-odoo-text" onClick={onFold} title="Свернуть">
               ‹
             </button>
@@ -398,10 +400,19 @@ function Column({
             )}
           </div>
         </div>
+        <div className="mt-1 h-2 overflow-hidden bg-[#dedcdf]">
+          <div
+            className="h-full min-w-1"
+            style={{
+              width: `${Math.min(100, Math.max(4, leads.length * 12))}%`,
+              backgroundColor: color,
+            }}
+          />
+        </div>
       </div>
       <div
         ref={setNodeRef}
-        className={`flex min-h-[240px] flex-1 flex-col gap-2 overflow-y-auto rounded-b border border-t-0 border-odoo-border-light p-2 ${isOver ? "bg-[#E8F0FE]" : "bg-[#F0F0F0]"}`}
+        className={`flex min-h-[240px] flex-1 flex-col overflow-y-auto border border-t-0 border-odoo-border-light ${isOver ? "bg-[#eef4fb]" : "bg-white"}`}
       >
         <SortableContext items={leads.map((l) => `lead-${l.id}`)} strategy={verticalListSortingStrategy}>
           {loading ? Array.from({ length: 3 }).map((_, i) => <KanbanCardSkeleton key={i} />) : leads.map((lead) => <LeadCard key={lead.id} lead={lead} />)}
@@ -409,7 +420,7 @@ function Column({
         {quick ? (
           <QuickCreate stageId={stage.id} onDone={() => setQuick(false)} />
         ) : (
-          <button type="button" className="flex items-center gap-1 py-1 text-[12px] text-odoo-text-muted hover:text-odoo-text" onClick={() => setQuick(true)}>
+          <button type="button" className="flex items-center gap-1 px-2 py-1.5 text-[12px] text-odoo-text-muted hover:text-odoo-text" onClick={() => setQuick(true)}>
             <Plus className="h-3.5 w-3.5" /> Добавить
           </button>
         )}
@@ -704,7 +715,7 @@ export function KanbanPage() {
       )}
 
       {view !== "list" && (
-      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto p-4 md:snap-none">
+      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto bg-[#f3f2f3] p-2 md:snap-none">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragCancel={() => setActiveLead(null)} onDragEnd={onDragEnd}>
           {group === "stage"
             ? stages.map((stage) => (
@@ -720,13 +731,13 @@ export function KanbanPage() {
                 />
               ))
             : groupColumns.map((col) => (
-                <div key={col.key} className="w-[280px] shrink-0">
+                <div key={col.key} className="w-[250px] shrink-0">
                   <div className="mb-2 text-[13px] font-semibold">
                     {col.title} <span className="font-normal text-odoo-text-muted">{col.items.length}</span>
                   </div>
-                  <div className="flex min-h-[200px] flex-col gap-2 rounded bg-[#F0F0F0] p-2">
+                  <div className="flex min-h-[200px] flex-col border border-odoo-border-light bg-white">
                     {col.items.map((lead) => (
-                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="h-[120px] overflow-hidden rounded border border-odoo-border-light bg-white p-2.5 shadow-sm">
+                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="overflow-hidden border-b border-odoo-border-light bg-white px-2 py-1.5 hover:bg-[#faf8f9]">
                         <LeadCardBody lead={lead} />
                       </Link>
                     ))}

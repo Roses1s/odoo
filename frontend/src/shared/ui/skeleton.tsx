@@ -6,7 +6,7 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function KanbanCardSkeleton() {
   return (
-    <div className="rounded-md border border-odoo-border-light bg-white p-3">
+    <div className="border-b border-odoo-border-light bg-white px-2 py-2">
       <div className="animate-pulse space-y-2.5">
         <div className="h-4 w-3/4 rounded bg-odoo-border" />
         <div className="h-3 w-1/2 rounded bg-odoo-border-light" />
