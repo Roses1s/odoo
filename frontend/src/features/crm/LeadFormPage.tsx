@@ -22,10 +22,12 @@ function Statusbar({
   stages,
   current,
   onSelect,
+  disabled = false,
 }: {
   stages: Stage[];
   current?: number;
   onSelect: (id: number) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex w-full overflow-x-auto">
@@ -37,8 +39,9 @@ function Statusbar({
           <button
             key={s.id}
             type="button"
+            disabled={disabled}
             onClick={() => onSelect(s.id)}
-            className={`relative min-h-9 flex-1 px-3 py-2 text-center text-xs font-medium ${
+            className={`relative min-h-9 flex-1 px-3 py-2 text-center text-xs font-medium disabled:cursor-wait disabled:opacity-70 ${
               active ? "bg-odoo-primary text-white" : done ? "bg-[#875A7B] text-white" : "bg-[#E9ECEF] text-odoo-text-muted"
             }`}
             style={{
@@ -139,6 +142,21 @@ export function LeadFormPage() {
     onError: (e: unknown) => setError(apiErrorMessage(e, "Ошибка сохранения")),
   });
 
+  const stageMut = useMutation({
+    mutationFn: ({ stage }: { stage: number; previous: number }) =>
+      api.patch(`/crm/leads/${id}/`, { stage }),
+    onSuccess: () => {
+      setError("");
+      qc.invalidateQueries({ queryKey: ["lead", id] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["timeline", id] });
+    },
+    onError: (e: unknown, variables) => {
+      set("stage", variables.previous);
+      setError(apiErrorMessage(e, "Не удалось изменить этап"));
+    },
+  });
+
   const noteMut = useMutation({
     mutationFn: (body: string) => api.post(`/crm/leads/${id}/notes/`, { body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["timeline", id] }),
@@ -187,7 +205,13 @@ export function LeadFormPage() {
           <Statusbar
             stages={stagesQ.data ?? []}
             current={form.stage}
-            onSelect={(sid) => set("stage", sid)}
+            disabled={stageMut.isPending}
+            onSelect={(sid) => {
+              if (sid === form.stage) return;
+              const previous = form.stage;
+              set("stage", sid);
+              if (!isNew) stageMut.mutate({ stage: sid, previous });
+            }}
           />
           {leadQ.isLoading && !isNew ? (
             <div className="mt-6">
