@@ -46,7 +46,7 @@ export function ControlPanel({
 }) {
   return (
     <div className="sticky top-12 z-30 border-b border-odoo-border-light bg-white">
-      <div className="relative flex min-h-[46px] flex-wrap items-center gap-2 px-3 py-1 md:flex-nowrap md:py-0">
+      <div className="relative flex min-h-[64px] flex-wrap items-center gap-2 px-3 py-1 md:flex-nowrap md:py-0">
         {onCreate && (
           <button
             type="button"
