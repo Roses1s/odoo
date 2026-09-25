@@ -24,7 +24,7 @@ export function Navbar() {
   );
 
   return (
-    <nav className="sticky top-0 z-50 flex h-12 items-center border-b border-odoo-border-light bg-white px-3 text-odoo-text">
+    <nav className="sticky top-0 z-50 flex h-12 items-center bg-white px-3 text-odoo-text">
       <button type="button" className="inline-flex h-12 items-center md:hidden" onClick={() => setSheet(true)} aria-label="Меню">
         <Menu className="h-5 w-5" />
       </button>
