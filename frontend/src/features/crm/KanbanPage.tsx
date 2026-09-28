@@ -24,7 +24,7 @@ import { api } from "@/shared/api/client";
 import { unwrapList } from "@/shared/lib/http";
 import { innChecksumOk, normalizeInn } from "@/shared/lib/inn";
 import type { Lead, Stage, Tag } from "@/shared/types";
-import { KanbanCardSkeleton } from "@/shared/ui/skeleton";
+import { KanbanCardSkeleton, ListRowSkeleton } from "@/shared/ui/skeleton";
 
 function results<T>(data: unknown): T[] {
   return unwrapList<T>(data);
@@ -468,6 +468,139 @@ const dropAnimation: DropAnimation = {
   sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.3" } } }),
 };
 
+const LIST_COLUMNS = 8;
+
+function ListTh({
+  children,
+  className = "",
+  numeric = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  numeric?: boolean;
+}) {
+  return (
+    <th
+      scope="col"
+      className={`sticky top-0 z-10 truncate bg-odoo-bg px-2 py-1.5 align-middle text-[13px] font-medium text-odoo-text shadow-[inset_0_-1px_0_#DEE2E6] ${
+        numeric ? "text-right" : "text-left"
+      } ${className}`}
+    >
+      {children}
+    </th>
+  );
+}
+
+function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
+  const navigate = useNavigate();
+  const total = useMemo(
+    () => leads.reduce((sum, lead) => sum + Number(lead.expected_revenue || 0), 0),
+    [leads],
+  );
+  const footerCell = "sticky bottom-0 z-10 bg-odoo-bg px-2 py-1 shadow-[inset_0_1px_0_#DEE2E6]";
+
+  return (
+    <div className="h-[calc(100dvh-90px)] min-h-0 overflow-auto overscroll-contain border-t border-odoo-border-light bg-white [scrollbar-gutter:stable]">
+      <table className="w-full min-w-[1180px] table-fixed border-collapse bg-white text-[13px] leading-[18px] text-odoo-text [font-variant-numeric:tabular-nums]">
+        <colgroup>
+          <col />
+          <col className="w-[120px]" />
+          <col className="w-[190px]" />
+          <col className="w-[190px]" />
+          <col className="w-[190px]" />
+          <col className="w-[150px]" />
+          <col className="w-[150px]" />
+          <col className="w-[80px]" />
+        </colgroup>
+        <thead>
+          <tr>
+            <ListTh className="pl-4">Название</ListTh>
+            <ListTh>ИНН</ListTh>
+            <ListTh>Контакт</ListTh>
+            <ListTh>Теги</ListTh>
+            <ListTh>Ответственный</ListTh>
+            <ListTh>Этап</ListTh>
+            <ListTh numeric>Ожидаемая выручка</ListTh>
+            <ListTh className="pr-4">Приоритет</ListTh>
+          </tr>
+        </thead>
+        <tbody>
+          {loading && Array.from({ length: 10 }).map((_, i) => <ListRowSkeleton key={i} cols={LIST_COLUMNS} />)}
+
+          {!loading && leads.length === 0 && (
+            <tr>
+              <td colSpan={LIST_COLUMNS} className="px-4 py-12 text-center text-[13px] text-odoo-text-muted">
+                Нет лидов. Нажмите <span className="font-medium text-odoo-text">Новый</span>, чтобы создать первый.
+              </td>
+            </tr>
+          )}
+
+          {leads.map((lead) => (
+            <tr
+              key={lead.id}
+              className="cursor-pointer border-b border-odoo-border-light bg-white hover:bg-[#faf8f9]"
+              onClick={() => navigate(`/crm/leads/${lead.id}`)}
+            >
+              <td className="truncate px-2 py-1 pl-4" title={lead.name}>
+                {lead.name}
+              </td>
+              <td className="truncate px-2 py-1">{lead.inn}</td>
+              <td className="truncate px-2 py-1 text-odoo-text-muted" title={lead.logist_contact || undefined}>
+                {lead.logist_contact || "—"}
+              </td>
+              <td className="overflow-hidden px-2 py-1">
+                {lead.tags?.length > 0 ? (
+                  <span className="flex flex-nowrap items-center gap-1 overflow-hidden">
+                    {lead.tags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        title={tag.name}
+                        className="inline-block max-w-[110px] shrink-0 truncate rounded-full bg-[#eeeaea] px-2 py-0.5 text-[11px] font-normal leading-[14px] text-[#6f666a]"
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="text-odoo-text-light">—</span>
+                )}
+              </td>
+              <td className="px-2 py-1">
+                <span className="flex items-center gap-1.5 overflow-hidden">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-odoo-primary text-[9px] font-semibold text-white">
+                    {initials(lead.assigned_to_email)}
+                  </span>
+                  <span className="truncate" title={lead.assigned_to_email || "Не назначен"}>
+                    {lead.assigned_to_email || "Не назначен"}
+                  </span>
+                </span>
+              </td>
+              <td className="truncate px-2 py-1" title={lead.stage_name}>
+                {lead.stage_name}
+              </td>
+              <td className="truncate px-2 py-1 text-right">{formatMoney(lead.expected_revenue)}</td>
+              <td className="px-2 py-1 pr-4">
+                <StarRating value={lead.priority} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        {leads.length > 0 && (
+          <tfoot>
+            <tr>
+              <td colSpan={6} className={`${footerCell} pl-4`} />
+              <td className={`${footerCell} truncate text-right font-semibold`} title={formatMoney(total)}>
+                {formatMoney(total)}
+              </td>
+              <td className={`${footerCell} pr-4`} />
+            </tr>
+          </tfoot>
+        )}
+      </table>
+    </div>
+  );
+}
+
 function Dropdown({ label, children, active }: { label: string; children: React.ReactNode; active?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
@@ -650,6 +783,7 @@ export function KanbanPage() {
         onSettings={() => setSettingsOpen((v) => !v)}
         view={view}
         onView={(v) => setFilter("view", v === "list" ? "list" : "")}
+        count={view === "list" ? leads.length : undefined}
       >
         {settingsOpen && (
           <div className="absolute left-1/2 top-full z-40 grid w-[min(calc(100vw-1.5rem),600px)] -translate-x-1/2 grid-cols-2 divide-x divide-odoo-border-light rounded-b-[3px] border border-t-0 border-odoo-border bg-white p-1 shadow-lg">
@@ -710,42 +844,13 @@ export function KanbanPage() {
         </div>
       )}
 
-      {leads.length === 0 && !leadsQ.isLoading && (
+      {view !== "list" && leads.length === 0 && !leadsQ.isLoading && (
         <div className="px-4 pt-10 text-center text-sm text-odoo-text-muted">
           Нет лидов. Нажмите <span className="font-medium text-odoo-text">Новый</span> или «+ Добавить» в колонке.
         </div>
       )}
 
-      {view === "list" && (
-        <div className="overflow-x-auto p-4">
-          <table className="w-full min-w-[640px] border-collapse bg-white text-sm">
-            <thead className="bg-odoo-bg text-[11px] font-semibold uppercase text-odoo-text-muted">
-              <tr>
-                <th className="p-2 text-left">Название</th>
-                <th className="p-2 text-left">ИНН</th>
-                <th className="p-2 text-left">Этап</th>
-                <th className="p-2 text-left">Сумма</th>
-                <th className="p-2 text-left">Ответственный</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map((l) => (
-                <tr
-                  key={l.id}
-                  className="cursor-pointer border-b border-odoo-border-light hover:bg-odoo-bg"
-                  onClick={() => navigate(`/crm/leads/${l.id}`)}
-                >
-                  <td className="p-2 font-medium">{l.name}</td>
-                  <td className="p-2">{l.inn}</td>
-                  <td className="p-2">{l.stage_name}</td>
-                  <td className="p-2">{formatMoney(l.expected_revenue)}</td>
-                  <td className="p-2">{l.assigned_to_email}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {view === "list" && <LeadListView leads={leads} loading={leadsQ.isLoading} />}
 
       {view !== "list" && (
       <div className="flex h-[calc(100dvh-90px)] min-h-0 snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden overscroll-x-contain border-t border-odoo-border-light bg-white md:snap-none">

@@ -32,6 +32,7 @@ export function ControlPanel({
   onSettings,
   view,
   onView,
+  count,
 }: {
   title?: string;
   crumbs?: string[];
@@ -43,6 +44,7 @@ export function ControlPanel({
   createLabel?: string;
   view?: "kanban" | "list";
   onView?: (v: "kanban" | "list") => void;
+  count?: number;
 }) {
   return (
     <div className="sticky top-10 z-30 shrink-0 border-b border-odoo-border-light bg-white">
@@ -95,6 +97,14 @@ export function ControlPanel({
           </div>
         )}
         <div className="relative z-10 ml-auto flex items-center gap-1">
+          {typeof count === "number" && count > 0 && (
+            <span
+              className="mr-1 whitespace-nowrap text-[13px] leading-none text-odoo-text-muted [font-variant-numeric:tabular-nums]"
+              aria-label={`Записей: ${count}`}
+            >
+              1-{count} / {count}
+            </span>
+          )}
           {onView && (
             <span className="mr-1 inline-flex h-8 overflow-hidden rounded-[3px] border border-odoo-border bg-white">
               <button
