@@ -1,8 +1,8 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { TimelineEntry } from "@/shared/types";
+import { Download, Paperclip, Search, Trash2, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import type { Attachment, TimelineEntry } from "@/shared/types";
 
 type Mode = "note" | "message" | "activity";
 
@@ -40,16 +40,40 @@ function dayLabel(iso: string): string {
   return format(date, "d MMMM yyyy 'г.'", { locale: ru });
 }
 
+function formatSize(bytes: number): string {
+  if (!bytes) return "0 Б";
+  const units = ["Б", "КБ", "МБ", "ГБ"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** i;
+  return `${i === 0 ? value : value.toFixed(1)} ${units[i]}`;
+}
+
 interface ChatterProps {
   timeline: TimelineEntry[];
   onSubmit?: (body: string, type: Mode) => void;
+  attachments?: Attachment[];
+  uploading?: boolean;
+  onUpload?: (file: File) => void;
+  onDownload?: (attachment: Attachment) => void;
+  onDeleteAttachment?: (attachment: Attachment) => void;
 }
 
-export function Chatter({ timeline, onSubmit }: ChatterProps) {
+export function Chatter({
+  timeline,
+  onSubmit,
+  attachments,
+  uploading = false,
+  onUpload,
+  onDownload,
+  onDeleteAttachment,
+}: ChatterProps) {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<Mode>("note");
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [filesOpen, setFilesOpen] = useState(false);
+  const fileInput = useRef<HTMLInputElement | null>(null);
+  const files = attachments ?? [];
 
   const current = MODES.find((m) => m.id === mode) ?? MODES[0];
 
@@ -104,8 +128,97 @@ export function Chatter({ timeline, onSubmit }: ChatterProps) {
           >
             <Search className="h-4 w-4" />
           </button>
+          {onUpload && (
+            <button
+              type="button"
+              aria-label={`Вложения: ${files.length}`}
+              title="Вложения"
+              onClick={() => setFilesOpen((v) => !v)}
+              className={`relative inline-flex h-7 w-7 items-center justify-center rounded-sm transition-colors hover:bg-odoo-bg ${
+                filesOpen ? "text-odoo-primary" : "text-odoo-text-muted hover:text-odoo-text"
+              }`}
+            >
+              <Paperclip className="h-4 w-4" />
+              {files.length > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 text-[10px] font-semibold text-odoo-primary">
+                  {files.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
+
+      {filesOpen && onUpload && (
+        <div className="border-b border-odoo-border-light px-3 pb-2">
+          <input
+            ref={fileInput}
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onUpload(file);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => fileInput.current?.click()}
+            className="mb-1 inline-flex h-7 items-center gap-1 rounded-[4px] border border-odoo-border bg-white px-2 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg disabled:opacity-60"
+          >
+            <Paperclip className="h-3.5 w-3.5" />
+            {uploading ? "Загрузка…" : "Прикрепить файл"}
+          </button>
+          {files.length === 0 ? (
+            <p className="py-1 text-[12px] text-odoo-text-light">Вложений пока нет</p>
+          ) : (
+            <ul>
+              {files.map((file) => (
+                <li
+                  key={file.id}
+                  className="flex items-center gap-2 border-t border-odoo-border-light py-1 text-[13px] first:border-t-0"
+                >
+                  <Paperclip className="h-3.5 w-3.5 shrink-0 text-odoo-text-light" />
+                  <button
+                    type="button"
+                    onClick={() => onDownload?.(file)}
+                    title={`${file.name} · ${formatSize(file.size)}`}
+                    className="min-w-0 flex-1 truncate text-left text-odoo-primary hover:underline"
+                  >
+                    {file.name}
+                  </button>
+                  <span className="shrink-0 text-[11px] text-odoo-text-muted">
+                    {formatSize(file.size)}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Скачать ${file.name}`}
+                    onClick={() => onDownload?.(file)}
+                    className="shrink-0 text-odoo-text-muted hover:text-odoo-text"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                  {onDeleteAttachment && (
+                    <button
+                      type="button"
+                      aria-label={`Удалить ${file.name}`}
+                      onClick={() => {
+                        if (window.confirm(`Удалить вложение «${file.name}»?`)) {
+                          onDeleteAttachment(file);
+                        }
+                      }}
+                      className="shrink-0 text-odoo-text-muted hover:text-odoo-danger"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {searchOpen && (
         <div className="flex items-center gap-1 px-3 pb-2">

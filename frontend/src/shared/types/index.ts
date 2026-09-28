@@ -65,6 +65,16 @@ export interface TimelineEntry {
   created_at: string;
 }
 
+export interface Attachment {
+  id: number;
+  name: string;
+  size: number;
+  content_type: string;
+  uploaded_by: number | null;
+  uploaded_by_name: string;
+  created_at: string;
+}
+
 export interface Shipment {
   id: number;
   lead: number;

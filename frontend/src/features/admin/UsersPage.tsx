@@ -19,11 +19,23 @@ const ROLE_LABEL: Record<string, string> = {
 
 type FormState = {
   email: string;
+  first_name: string;
+  last_name: string;
   role: Role;
   password: string;
 };
 
-const emptyForm: FormState = { email: "", role: "operator", password: "" };
+const emptyForm: FormState = {
+  email: "",
+  first_name: "",
+  last_name: "",
+  role: "operator",
+  password: "",
+};
+
+function fullName(user: { first_name?: string; last_name?: string }): string {
+  return `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+}
 
 export function UsersPage() {
   const qc = useQueryClient();
@@ -48,7 +60,12 @@ export function UsersPage() {
 
   const update = useMutation({
     mutationFn: () => {
-      const payload: Record<string, string> = { email: form.email, role: form.role };
+      const payload: Record<string, string> = {
+        email: form.email,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        role: form.role,
+      };
       if (form.password.trim()) payload.password = form.password;
       return api.patch(`/admin/users/${editing!.id}/`, payload);
     },
@@ -69,7 +86,13 @@ export function UsersPage() {
 
   function startEdit(u: User) {
     setEditing(u);
-    setForm({ email: u.email, role: u.role, password: "" });
+    setForm({
+      email: u.email,
+      first_name: u.first_name ?? "",
+      last_name: u.last_name ?? "",
+      role: u.role,
+      password: "",
+    });
     setError("");
   }
 
@@ -90,6 +113,24 @@ export function UsersPage() {
             placeholder="email"
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+          />
+        </label>
+        <label>
+          <span className="mb-1 block text-[11px] uppercase text-odoo-text-muted">Имя</span>
+          <input
+            className="rounded border border-odoo-border px-2 py-1.5 text-sm"
+            placeholder="Иван"
+            value={form.first_name}
+            onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
+          />
+        </label>
+        <label>
+          <span className="mb-1 block text-[11px] uppercase text-odoo-text-muted">Фамилия</span>
+          <input
+            className="rounded border border-odoo-border px-2 py-1.5 text-sm"
+            placeholder="Петров"
+            value={form.last_name}
+            onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
           />
         </label>
         <label>
@@ -142,6 +183,7 @@ export function UsersPage() {
           <tr>
             <th className="w-12 p-2 text-left">№</th>
             <th className="p-2 text-left">Email</th>
+            <th className="p-2 text-left">ФИО</th>
             <th className="p-2 text-left">Роль</th>
             <th className="p-2 text-left">Активен</th>
             <th className="p-2 text-left">Действия</th>
@@ -160,6 +202,9 @@ export function UsersPage() {
             >
               <td className="p-2 text-odoo-text-muted">{index + 1}</td>
               <td className="p-2">{u.email}</td>
+              <td className="p-2">
+                {fullName(u) || <span className="text-odoo-text-light">— не указано —</span>}
+              </td>
               <td className="p-2">{ROLE_LABEL[u.role] ?? u.role}</td>
               <td className="p-2">{u.is_active ? "да" : "нет"}</td>
               <td className="p-2">

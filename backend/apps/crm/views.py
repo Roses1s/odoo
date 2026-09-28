@@ -1,15 +1,19 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, Q, Sum
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.crm.filters import LeadFilter
-from apps.crm.models import Lead, Note, Stage, Tag
+from apps.crm.models import Attachment, Lead, Note, Stage, Tag
 from apps.crm.notes import NoteSerializer
 from apps.crm.serializers import (
+    AttachmentSerializer,
     LeadSerializer,
     StageReorderSerializer,
     StageSerializer,
@@ -192,6 +196,57 @@ class LeadViewSet(viewsets.ModelViewSet):
             )
         entries.sort(key=lambda e: e["created_at"], reverse=True)
         return Response(entries)
+
+    @action(
+        detail=True,
+        methods=["get", "post"],
+        url_path="attachments",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def attachments(self, request, pk=None):
+        lead = self.get_object()
+        if request.method == "GET":
+            queryset = lead.attachments.select_related("uploaded_by")
+            return Response(AttachmentSerializer(queryset, many=True).data)
+        upload = request.FILES.get("file")
+        if not upload:
+            return Response(
+                {"detail": "Файл не передан"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if upload.size > Attachment.MAX_SIZE:
+            limit_mb = Attachment.MAX_SIZE // (1024 * 1024)
+            return Response(
+                {"detail": f"Файл больше {limit_mb} МБ"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        attachment = Attachment.objects.create(
+            lead=lead,
+            file=upload,
+            name=upload.name[:255],
+            size=upload.size,
+            content_type=(upload.content_type or "")[:100],
+            uploaded_by=request.user,
+        )
+        return Response(AttachmentSerializer(attachment).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"], url_path=r"attachments/(?P<att_id>\d+)/download")
+    def download_attachment(self, request, pk=None, att_id=None):
+        lead = self.get_object()
+        attachment = get_object_or_404(lead.attachments, pk=att_id)
+        return FileResponse(
+            attachment.file.open("rb"), as_attachment=True, filename=attachment.name
+        )
+
+    @action(detail=True, methods=["delete"], url_path=r"attachments/(?P<att_id>\d+)")
+    def delete_attachment(self, request, pk=None, att_id=None):
+        lead = self.get_object()
+        attachment = get_object_or_404(lead.attachments, pk=att_id)
+        is_manager = request.user.role in ("admin", "manager")
+        if not is_manager and attachment.uploaded_by_id != request.user.id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        attachment.file.delete(save=False)
+        attachment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"], url_path="notes")
     def add_note(self, request, pk=None):

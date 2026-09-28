@@ -1,6 +1,7 @@
 volumes:
   pgdata:
   backups:
+  media:
 
 services:
   db:
@@ -39,6 +40,7 @@ services:
     env_file: .env
     volumes:
       - backups:/backups
+      - media:/app/media
     depends_on:
       db:
         condition: service_healthy

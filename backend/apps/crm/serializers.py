@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.fields import MaskedEmailField, MaskedINNField, MaskedPhoneField
 from apps.core.validators import normalize_phone, validate_inn
-from apps.crm.models import Lead, Stage, Tag
+from apps.crm.models import Attachment, Lead, Stage, Tag
 
 
 class StageSerializer(serializers.ModelSerializer):
@@ -32,6 +32,29 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ("id", "name", "color")
+
+
+class AttachmentSerializer(serializers.ModelSerializer):
+    uploaded_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Attachment
+        fields = (
+            "id",
+            "name",
+            "size",
+            "content_type",
+            "uploaded_by",
+            "uploaded_by_name",
+            "created_at",
+        )
+        read_only_fields = fields
+
+    def get_uploaded_by_name(self, obj) -> str:
+        user = obj.uploaded_by
+        if not user:
+            return ""
+        return f"{user.first_name} {user.last_name}".strip() or user.email
 
 
 class LeadSerializer(serializers.ModelSerializer):

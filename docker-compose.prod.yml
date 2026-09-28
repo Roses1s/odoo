@@ -8,6 +8,7 @@ services:
       SEED: ${SEED:-0}
     volumes:
       - backups:/backups
+      - media:/app/media
 
   celery_worker:
     environment:

@@ -1,4 +1,5 @@
 import hashlib
+from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
@@ -133,3 +134,34 @@ class Note(models.Model):
 
     def __str__(self) -> str:
         return f"Note #{self.pk}"
+
+
+def attachment_upload_to(instance: "Attachment", filename: str) -> str:
+    return f"leads/{instance.lead_id}/{uuid4().hex}_{filename}"
+
+
+class Attachment(models.Model):
+    """File attached to a lead. Files are served through an authenticated view,
+    never from a public media URL."""
+
+    MAX_SIZE = 20 * 1024 * 1024
+
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="attachments")
+    file = models.FileField(upload_to=attachment_upload_to)
+    name = models.CharField(max_length=255)
+    size = models.PositiveBigIntegerField(default=0)
+    content_type = models.CharField(max_length=100, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="crm_attachments",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.name

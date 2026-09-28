@@ -7,7 +7,7 @@ import { useAuthStore } from "@/features/auth/store";
 import { api } from "@/shared/api/client";
 import { apiErrorMessage } from "@/shared/lib/http";
 import { innChecksumOk, normalizeInn } from "@/shared/lib/inn";
-import type { Lead, Stage, Tag, Shipment, TimelineEntry } from "@/shared/types";
+import type { Attachment, Lead, Stage, Tag, Shipment, TimelineEntry } from "@/shared/types";
 import { Chatter } from "@/shared/ui/chatter";
 import {
   Field,
@@ -277,6 +277,51 @@ export function LeadFormPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["timeline", id] }),
   });
 
+  const attachmentsQ = useQuery({
+    queryKey: ["lead-attachments", id],
+    enabled: !isNew,
+    queryFn: async () =>
+      results<Attachment>((await api.get(`/crm/leads/${id}/attachments/`)).data),
+  });
+
+  const uploadMut = useMutation({
+    mutationFn: (file: File) => {
+      const data = new FormData();
+      data.append("file", file);
+      return api.post(`/crm/leads/${id}/attachments/`, data);
+    },
+    onSuccess: () => {
+      setError("");
+      qc.invalidateQueries({ queryKey: ["lead-attachments", id] });
+    },
+    onError: (e: unknown) => setError(apiErrorMessage(e, "Не удалось загрузить файл")),
+  });
+
+  const deleteAttachmentMut = useMutation({
+    mutationFn: (attachmentId: number) =>
+      api.delete(`/crm/leads/${id}/attachments/${attachmentId}/`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lead-attachments", id] }),
+    onError: (e: unknown) => setError(apiErrorMessage(e, "Не удалось удалить вложение")),
+  });
+
+  async function downloadAttachment(attachment: Attachment) {
+    try {
+      const response = await api.get(`/crm/leads/${id}/attachments/${attachment.id}/download/`, {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(response.data as Blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = attachment.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(apiErrorMessage(e, "Не удалось скачать файл"));
+    }
+  }
+
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
@@ -488,6 +533,34 @@ export function LeadFormPage() {
                 items={stages}
                 current={form.stage}
                 disabled={stageMut.isPending}
+                left={
+                  !isNew ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/shipments/new?lead=${id}`)}
+                        className="h-[30px] rounded-[4px] bg-odoo-primary px-3 text-[13px] font-medium text-white transition-colors hover:bg-odoo-primary-hover"
+                      >
+                        Создать заявку
+                      </button>
+                      {canManage && (
+                        <button
+                          type="button"
+                          disabled={archive.isPending}
+                          onClick={() => {
+                            const ok = window.confirm(
+                              `Пометить лид «${form.name}» проигранным? Он уйдёт в архив.`,
+                            );
+                            if (ok) archive.mutate();
+                          }}
+                          className="h-[30px] rounded-[4px] border border-odoo-border bg-white px-3 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg disabled:opacity-60"
+                        >
+                          Проигрыш
+                        </button>
+                      )}
+                    </>
+                  ) : null
+                }
                 onSelect={(sid) => {
                   if (sid === form.stage) return;
                   const previous = form.stage;
@@ -548,7 +621,7 @@ export function LeadFormPage() {
                             <OdooInput
                               id="lead-revenue"
                               type="number"
-                              className="max-w-[13ch]"
+                              className="max-w-[11ch] text-right"
                               value={form.expected_revenue}
                               onChange={(e) => set("expected_revenue", e.target.value)}
                             />
@@ -619,7 +692,15 @@ export function LeadFormPage() {
 
         {!isNew && (
           <div className="w-full shrink-0 bg-white lg:w-[33%] lg:max-w-[520px] lg:overflow-y-auto">
-            <Chatter timeline={timelineQ.data ?? []} onSubmit={(b) => noteMut.mutate(b)} />
+            <Chatter
+              timeline={timelineQ.data ?? []}
+              onSubmit={(b) => noteMut.mutate(b)}
+              attachments={attachmentsQ.data ?? []}
+              uploading={uploadMut.isPending}
+              onUpload={(file) => uploadMut.mutate(file)}
+              onDownload={downloadAttachment}
+              onDeleteAttachment={(a) => deleteAttachmentMut.mutate(a.id)}
+            />
           </div>
         )}
       </div>
