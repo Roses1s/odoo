@@ -3,3 +3,12 @@ node_modules/
 
 # Build artifacts
 *.tsbuildinfo
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local scratch Postgres used to run backend tests without Docker
+backend/.pgdata/

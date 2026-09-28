@@ -162,7 +162,11 @@ describe("lead load failure", () => {
     const realImpl = get.getMockImplementation();
     if (!realImpl) throw new Error("api.get mock has no implementation");
     const failing = (url: string) =>
-      url.startsWith("/crm/leads") ? Promise.reject({ response: { status: 500, data: { detail: "Не удалось загрузить лиды." } } }) : realImpl(url);
+      url.startsWith("/crm/leads")
+        ? Promise.reject({
+            response: { status: 500, data: { detail: "Не удалось загрузить лиды." } },
+          })
+        : realImpl(url);
 
     get.mockImplementation(failing);
     try {

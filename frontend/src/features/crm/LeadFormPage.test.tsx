@@ -69,7 +69,8 @@ vi.mock("@/shared/api/client", () => ({
       if (url.startsWith("/crm/stages")) return { data: { results: STAGES } };
       if (url.startsWith("/crm/tags")) return { data: { results: [] } };
       if (url === "/crm/leads/1/") return { data: LEAD };
-      if (url.startsWith("/crm/leads/?")) return { data: { count: 42, results: [{ id: 1 }] } };
+      if (url === "/crm/leads/1/pager/")
+        return { data: { position: 1, total: 42, prev_id: null, next_id: 2 } };
       if (url.includes("timeline")) return { data: TIMELINE };
       if (url.includes("download")) {
         return { data: new Blob(["содержимое файла"], { type: "text/plain" }) };

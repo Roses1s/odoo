@@ -19,13 +19,7 @@ const LIST_COLUMNS = 8; // selection checkbox + 7 data columns
 const ROWS_PER_PAGE = 80;
 
 type SortKey =
-  | "name"
-  | "inn"
-  | "logist_contact"
-  | "tags"
-  | "assigned_to_email"
-  | "stage_name"
-  | "priority";
+  "name" | "inn" | "logist_contact" | "tags" | "assigned_to_email" | "stage_name" | "priority";
 
 interface SortState {
   key: SortKey;
@@ -260,7 +254,9 @@ export function LeadListView({
       <tr
         key={lead.id}
         className={`cursor-pointer border-b border-odoo-border-light ${
-          selected.has(lead.id) ? "bg-odoo-accent-soft" : "bg-odoo-surface hover:bg-odoo-surface-hover"
+          selected.has(lead.id)
+            ? "bg-odoo-accent-soft"
+            : "bg-odoo-surface hover:bg-odoo-surface-hover"
         }`}
         onClick={() => navigate(`/crm/leads/${lead.id}`)}
       >
@@ -342,9 +338,7 @@ export function LeadListView({
     <div className="h-[calc(100dvh-90px)] min-h-0 overflow-auto overscroll-contain border-t border-odoo-border-light bg-odoo-bg [scrollbar-gutter:stable]">
       {selectedCount > 0 && (
         <div className="sticky top-0 z-20 flex min-h-[38px] items-center gap-3 border-b border-odoo-border-light bg-odoo-surface px-4 py-1.5 text-[13px] shadow-sm">
-          <span className="font-medium text-odoo-text">
-            Выбрано записей: {selectedCount}
-          </span>
+          <span className="font-medium text-odoo-text">Выбрано записей: {selectedCount}</span>
           <button
             type="button"
             className="rounded-[3px] border border-odoo-border bg-odoo-surface px-2.5 py-1 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg"
@@ -418,7 +412,9 @@ export function LeadListView({
                 <tr className="border-b border-odoo-border-light bg-odoo-bg">
                   <td colSpan={LIST_COLUMNS} className="px-4 py-1.5">
                     <span className="text-[13px] font-semibold text-odoo-text">{g.title}</span>
-                    <span className="ml-2 text-[12px] text-odoo-text-muted">({g.items.length})</span>
+                    <span className="ml-2 text-[12px] text-odoo-text-muted">
+                      ({g.items.length})
+                    </span>
                   </td>
                 </tr>
               )}

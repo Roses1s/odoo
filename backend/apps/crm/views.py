@@ -101,7 +101,11 @@ class LeadViewSet(viewsets.ModelViewSet):
             # Assignment is the source of truth for current access. created_by is
             # audit metadata and must not retain access after reassignment.
             qs = qs.filter(assigned_to=user)
-        if self.request.query_params.get("is_archived") is None:
+        # The archived filter only makes sense for the list: it hides old
+        # leads from the board by default. Applying it to retrieve/update too
+        # meant a lead vanished — 404, not just read-only — the moment someone
+        # archived it, including for the person who just archived it.
+        if self.action == "list" and self.request.query_params.get("is_archived") is None:
             qs = qs.filter(is_archived=False)
         search = self.request.query_params.get("search")
         if search:
@@ -125,6 +129,42 @@ class LeadViewSet(viewsets.ModelViewSet):
         lead.is_archived = True
         lead.save(update_fields=["is_archived"])
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["get"], url_path="pager")
+    def pager(self, request, pk=None):
+        """Position, total and neighbour ids for the "N / M" control on the form.
+
+        The form used to fetch up to 500 fully serialised leads just to build
+        this — every field, every join, every masking rule, to throw away
+        everything but the id column. This runs three small, indexed queries
+        instead and never hydrates a Lead the user doesn't look at.
+        """
+        lead = self.get_object()
+        qs = Lead.objects.select_related(None)
+        user = request.user
+        if user.role == "operator":
+            qs = qs.filter(assigned_to=user)
+        # Mirror the list default: browse within the same archived/active
+        # bucket the opened lead itself belongs to.
+        qs = qs.filter(is_archived=lead.is_archived)
+
+        # Matches Lead.Meta.ordering ("-created_at"), tie-broken by id so the
+        # sequence is stable even when two leads share a timestamp.
+        before = Q(created_at__gt=lead.created_at) | Q(created_at=lead.created_at, id__gt=lead.id)
+        after = Q(created_at__lt=lead.created_at) | Q(created_at=lead.created_at, id__lt=lead.id)
+
+        total = qs.count()
+        position = qs.filter(before).count() + 1
+        prev_id = (
+            qs.filter(before).order_by("created_at", "id").values_list("id", flat=True).first()
+        )
+        next_id = (
+            qs.filter(after).order_by("-created_at", "-id").values_list("id", flat=True).first()
+        )
+
+        return Response(
+            {"position": position, "total": total, "prev_id": prev_id, "next_id": next_id}
+        )
 
     @action(detail=True, methods=["get"], url_path="timeline")
     def timeline(self, request, pk=None):
