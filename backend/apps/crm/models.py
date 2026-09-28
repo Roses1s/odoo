@@ -157,6 +157,15 @@ class Attachment(models.Model):
     MAX_SIZE = 20 * 1024 * 1024
 
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="attachments")
+    # Set when the file was attached to a chatter note; removing the note
+    # removes its files too. Null means the file was added to the lead itself.
+    note = models.ForeignKey(
+        Note,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="attachments",
+    )
     file = models.FileField(upload_to=attachment_upload_to)
     name = models.CharField(max_length=255)
     size = models.PositiveBigIntegerField(default=0)

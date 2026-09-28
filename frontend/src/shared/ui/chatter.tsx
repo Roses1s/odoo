@@ -43,7 +43,9 @@ function formatSize(bytes: number): string {
 
 interface ChatterProps {
   timeline: TimelineEntry[];
-  onSubmit?: (body: string, type: Mode) => void;
+  onSubmit?: (body: string, type: Mode, files: File[]) => void;
+  posting?: boolean;
+  composerError?: string;
   attachments?: Attachment[];
   uploading?: boolean;
   attachmentError?: string;
@@ -55,6 +57,8 @@ interface ChatterProps {
 export function Chatter({
   timeline,
   onSubmit,
+  posting = false,
+  composerError,
   attachments,
   uploading = false,
   attachmentError,
@@ -67,7 +71,9 @@ export function Chatter({
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [filesOpen, setFilesOpen] = useState(false);
+  const [pending, setPending] = useState<File[]>([]);
   const fileInput = useRef<HTMLInputElement | null>(null);
+  const composerInput = useRef<HTMLInputElement | null>(null);
   const files = attachments ?? [];
 
   const current = MODES.find((m) => m.id === mode) ?? MODES[0];
@@ -246,9 +252,10 @@ export function Chatter({
         className="border-b border-odoo-border-light px-3 pb-2"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!text.trim()) return;
-          onSubmit?.(text.trim(), mode);
+          if (!text.trim() && pending.length === 0) return;
+          onSubmit?.(text.trim(), mode, pending);
           setText("");
+          setPending([]);
         }}
       >
         <textarea
@@ -258,13 +265,63 @@ export function Chatter({
           placeholder={current.placeholder}
           className="w-full resize-y rounded-[4px] border border-odoo-border px-2 py-1.5 text-[13px] text-odoo-text outline-none placeholder:text-odoo-text-light focus:border-odoo-primary"
         />
-        <div className="mt-1 flex justify-end">
+        {pending.length > 0 && (
+          <ul className="mt-1 flex flex-wrap gap-1">
+            {pending.map((file, i) => (
+              <li
+                key={`${file.name}-${i}`}
+                className="inline-flex items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-bg px-1.5 py-0.5 text-[11px]"
+              >
+                <Paperclip className="h-3 w-3 shrink-0 text-odoo-text-light" />
+                <span className="max-w-[150px] truncate" title={file.name}>
+                  {file.name}
+                </span>
+                <span className="text-odoo-text-muted">{formatSize(file.size)}</span>
+                <button
+                  type="button"
+                  aria-label={`Убрать ${file.name}`}
+                  onClick={() => setPending((list) => list.filter((_, index) => index !== i))}
+                  className="text-odoo-text-muted hover:text-odoo-danger"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {composerError && (
+          <p role="alert" className="mt-1 text-[12px] text-odoo-danger">
+            {composerError}
+          </p>
+        )}
+        <div className="mt-1 flex items-center justify-end gap-1">
+          <input
+            ref={composerInput}
+            type="file"
+            multiple
+            className="hidden"
+            aria-label="Файлы записи"
+            onChange={(e) => {
+              const chosen = Array.from(e.target.files ?? []);
+              if (chosen.length) setPending((list) => [...list, ...chosen]);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            aria-label="Прикрепить файл к записи"
+            title="Прикрепить файл к записи"
+            onClick={() => composerInput.current?.click()}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-odoo-text-muted transition-colors hover:bg-odoo-bg hover:text-odoo-text"
+          >
+            <Paperclip className="h-4 w-4" />
+          </button>
           <button
             type="submit"
-            disabled={!text.trim()}
+            disabled={posting || (!text.trim() && pending.length === 0)}
             className="h-7 rounded-[4px] bg-odoo-primary px-3 text-[13px] font-medium text-white transition-colors hover:bg-odoo-primary-hover disabled:opacity-50"
           >
-            {current.action}
+            {posting ? "Отправка…" : current.action}
           </button>
         </div>
       </form>
@@ -303,13 +360,35 @@ export function Chatter({
                       <span className="italic text-odoo-text-muted">({entry.field_label})</span>
                     </div>
                   ) : (
-                    <p
-                      className={`text-[13px] leading-[19px] ${
-                        entry.type === "history" ? "text-odoo-text-muted" : "text-odoo-text"
-                      }`}
-                    >
-                      {entry.body}
-                    </p>
+                    entry.body && (
+                      <p
+                        className={`text-[13px] leading-[19px] ${
+                          entry.type === "history" ? "text-odoo-text-muted" : "text-odoo-text"
+                        }`}
+                      >
+                        {entry.body}
+                      </p>
+                    )
+                  )}
+                  {entry.attachments && entry.attachments.length > 0 && (
+                    <ul className="mt-1 flex flex-wrap gap-1">
+                      {entry.attachments.map((file) => (
+                        <li key={file.id}>
+                          <button
+                            type="button"
+                            onClick={() => onDownload?.(file)}
+                            title={`${file.name} · ${formatSize(file.size)}`}
+                            className="inline-flex max-w-[240px] items-center gap-1 rounded-[4px] border border-odoo-border bg-white px-1.5 py-0.5 text-[11px] text-odoo-primary transition-colors hover:bg-odoo-bg"
+                          >
+                            <Paperclip className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{file.name}</span>
+                            <span className="shrink-0 text-odoo-text-muted">
+                              {formatSize(file.size)}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
               </div>

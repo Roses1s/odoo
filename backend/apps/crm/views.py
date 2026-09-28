@@ -5,7 +5,7 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 
@@ -126,7 +126,8 @@ class LeadViewSet(viewsets.ModelViewSet):
     def timeline(self, request, pk=None):
         lead = self.get_object()
         entries: list[dict] = []
-        for note in lead.notes.select_related("author").all():
+        notes = lead.notes.select_related("author").prefetch_related("attachments")
+        for note in notes:
             entries.append(
                 {
                     "id": f"note-{note.id}",
@@ -134,6 +135,7 @@ class LeadViewSet(viewsets.ModelViewSet):
                     "author_name": NoteSerializer().get_author_name(note),
                     "author_initials": NoteSerializer().get_author_initials(note),
                     "body": note.body,
+                    "attachments": AttachmentSerializer(note.attachments.all(), many=True).data,
                     "created_at": note.created_at,
                 }
             )
@@ -247,10 +249,38 @@ class LeadViewSet(viewsets.ModelViewSet):
         attachment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=["post"], url_path="notes")
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="notes",
+        parser_classes=[MultiPartParser, FormParser, JSONParser],
+    )
     def add_note(self, request, pk=None):
         lead = self.get_object()
-        ser = NoteSerializer(data=request.data)
-        ser.is_valid(raise_exception=True)
-        note = Note.objects.create(lead=lead, author=request.user, body=ser.validated_data["body"])
-        return Response(NoteSerializer(note).data, status=status.HTTP_201_CREATED)
+        body = str(request.data.get("body") or "").strip()
+        uploads = request.FILES.getlist("files")
+        if not body and not uploads:
+            return Response(
+                {"detail": "Добавьте текст или файл"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        limit_mb = Attachment.MAX_SIZE // (1024 * 1024)
+        for upload in uploads:
+            if upload.size > Attachment.MAX_SIZE:
+                return Response(
+                    {"detail": f"Файл «{upload.name}» больше {limit_mb} МБ"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        note = Note.objects.create(lead=lead, author=request.user, body=body)
+        for upload in uploads:
+            Attachment.objects.create(
+                lead=lead,
+                note=note,
+                file=upload,
+                name=upload.name[:255],
+                size=upload.size,
+                content_type=(upload.content_type or "")[:100],
+                uploaded_by=request.user,
+            )
+        data = NoteSerializer(note).data
+        data["attachments"] = AttachmentSerializer(note.attachments.all(), many=True).data
+        return Response(data, status=status.HTTP_201_CREATED)

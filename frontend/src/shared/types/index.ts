@@ -68,6 +68,8 @@ export interface TimelineEntry {
   field_label?: string;
   old_value?: string;
   new_value?: string;
+  /** Files attached to this note. */
+  attachments?: Attachment[];
   created_at: string;
 }
 

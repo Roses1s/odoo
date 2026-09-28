@@ -293,8 +293,16 @@ export function LeadFormPage() {
   });
 
   const noteMut = useMutation({
-    mutationFn: (body: string) => api.post(`/crm/leads/${id}/notes/`, { body }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["timeline", id] }),
+    mutationFn: ({ body, files }: { body: string; files: File[] }) => {
+      const data = new FormData();
+      data.append("body", body);
+      for (const file of files) data.append("files", file);
+      return api.post(`/crm/leads/${id}/notes/`, data);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["timeline", id] });
+      qc.invalidateQueries({ queryKey: ["lead-attachments", id] });
+    },
   });
 
   const attachmentsQ = useQuery({
@@ -768,7 +776,11 @@ export function LeadFormPage() {
           <div className="w-full shrink-0 bg-white lg:w-[33%] lg:max-w-[520px] lg:overflow-y-auto">
             <Chatter
               timeline={timelineQ.data ?? []}
-              onSubmit={(b) => noteMut.mutate(b)}
+              onSubmit={(body, _mode, files) => noteMut.mutate({ body, files })}
+              posting={noteMut.isPending}
+              composerError={
+                noteMut.error ? apiErrorMessage(noteMut.error, "Не удалось сохранить запись") : undefined
+              }
               attachments={attachmentsQ.data ?? []}
               uploading={uploadMut.isPending}
               attachmentError={
