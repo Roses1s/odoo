@@ -166,6 +166,7 @@ export function LeadFormPage() {
   const [form, setForm] = useState<FormState>(empty);
   const [pristine, setPristine] = useState<FormState>(empty);
   const [error, setError] = useState("");
+  const [downloadError, setDownloadError] = useState("");
   const [actionsOpen, setActionsOpen] = useState(false);
   const [tab, setTab] = useState("shipments");
   const loadedId = useRef<number | null>(null);
@@ -310,17 +311,14 @@ export function LeadFormPage() {
       return api.post(`/crm/leads/${id}/attachments/`, data);
     },
     onSuccess: () => {
-      setError("");
       qc.invalidateQueries({ queryKey: ["lead-attachments", id] });
     },
-    onError: (e: unknown) => setError(apiErrorMessage(e, "Не удалось загрузить файл")),
   });
 
   const deleteAttachmentMut = useMutation({
     mutationFn: (attachmentId: number) =>
       api.delete(`/crm/leads/${id}/attachments/${attachmentId}/`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lead-attachments", id] }),
-    onError: (e: unknown) => setError(apiErrorMessage(e, "Не удалось удалить вложение")),
   });
 
   async function downloadAttachment(attachment: Attachment) {
@@ -328,6 +326,7 @@ export function LeadFormPage() {
       const response = await api.get(`/crm/leads/${id}/attachments/${attachment.id}/download/`, {
         responseType: "blob",
       });
+      setDownloadError("");
       const url = URL.createObjectURL(response.data as Blob);
       const link = document.createElement("a");
       link.href = url;
@@ -337,7 +336,7 @@ export function LeadFormPage() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(apiErrorMessage(e, "Не удалось скачать файл"));
+      setDownloadError(apiErrorMessage(e, "Не удалось скачать файл"));
     }
   }
 
@@ -772,6 +771,14 @@ export function LeadFormPage() {
               onSubmit={(b) => noteMut.mutate(b)}
               attachments={attachmentsQ.data ?? []}
               uploading={uploadMut.isPending}
+              attachmentError={
+                downloadError ||
+                (uploadMut.error ? apiErrorMessage(uploadMut.error, "Не удалось загрузить файл") : "") ||
+                (deleteAttachmentMut.error
+                  ? apiErrorMessage(deleteAttachmentMut.error, "Не удалось удалить вложение")
+                  : "") ||
+                undefined
+              }
               onUpload={(file) => uploadMut.mutate(file)}
               onDownload={downloadAttachment}
               onDeleteAttachment={(a) => deleteAttachmentMut.mutate(a.id)}

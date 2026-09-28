@@ -13,13 +13,6 @@ const MODES: { id: Mode; label: string; placeholder: string; action: string }[] 
     placeholder: "Записать внутреннее примечание…",
     action: "Записать",
   },
-  {
-    id: "message",
-    label: "Отправить сообщение",
-    placeholder: "Написать сообщение…",
-    action: "Отправить",
-  },
-  { id: "activity", label: "Активность", placeholder: "Описать задачу…", action: "Запланировать" },
 ];
 
 function relativeTime(iso: string): string {
@@ -53,6 +46,7 @@ interface ChatterProps {
   onSubmit?: (body: string, type: Mode) => void;
   attachments?: Attachment[];
   uploading?: boolean;
+  attachmentError?: string;
   onUpload?: (file: File) => void;
   onDownload?: (attachment: Attachment) => void;
   onDeleteAttachment?: (attachment: Attachment) => void;
@@ -63,6 +57,7 @@ export function Chatter({
   onSubmit,
   attachments,
   uploading = false,
+  attachmentError,
   onUpload,
   onDownload,
   onDeleteAttachment,
@@ -170,6 +165,11 @@ export function Chatter({
             <Paperclip className="h-3.5 w-3.5" />
             {uploading ? "Загрузка…" : "Прикрепить файл"}
           </button>
+          {attachmentError && (
+            <p role="alert" className="py-1 text-[12px] text-odoo-danger">
+              {attachmentError}
+            </p>
+          )}
           {files.length === 0 ? (
             <p className="py-1 text-[12px] text-odoo-text-light">Вложений пока нет</p>
           ) : (
