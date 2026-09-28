@@ -97,6 +97,62 @@ describe("lead list paging", () => {
   });
 });
 
+describe("lead list odoo-style controls", () => {
+  it("sorts rows by the clicked column header", async () => {
+    const { container } = renderAt("/crm?view=list");
+    await waitFor(() => expect(screen.getByText("Лид 1")).toBeTruthy());
+
+    const firstColumn = () =>
+      Array.from(container.querySelectorAll<HTMLTableCellElement>("tbody td:nth-child(2)")).map(
+        (td) => td.textContent,
+      );
+    // Baseline order: Лид 1 … Лид 80. Names share a prefix, so plain string
+    // comparison puts "Лид 10" right after "Лид 1" — assert positions instead.
+    expect(firstColumn()[0]).toBe("Лид 1");
+
+    fireEvent.click(screen.getByRole("button", { name: /Название/ }));
+    let names = firstColumn();
+    expect(names[0]).toBe("Лид 1");
+    expect(names.indexOf("Лид 10")).toBe(1);
+
+    // Descending over the visible page (80 rows): "Лид 99" is the largest
+    // name lexicographically, so it comes first.
+    fireEvent.click(screen.getByRole("button", { name: /Название/ }));
+    names = firstColumn();
+    expect(names[0]).toBe("Лид 99");
+    expect(names[1]).toBe("Лид 98");
+
+    // Third click resets sorting back to the natural order.
+    fireEvent.click(screen.getByRole("button", { name: /Название/ }));
+    expect(firstColumn()[0]).toBe("Лид 1");
+  });
+
+  it("selects rows via checkboxes and shows the selection bar", async () => {
+    renderAt("/crm?view=list");
+    await waitFor(() => expect(screen.getByText("Лид 1")).toBeTruthy());
+
+    fireEvent.click(screen.getByLabelText("Выбрать лид «Лид 1»"));
+    fireEvent.click(screen.getByLabelText("Выбрать лид «Лид 2»"));
+    expect(screen.getByText("Выбрано записей: 2")).toBeTruthy();
+
+    fireEvent.click(screen.getByLabelText("Выбрать все видимые лиды"));
+    expect(screen.getByText("Выбрано записей: 80")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Снять выделение" }));
+    expect(screen.queryByText(/Выбрано записей/)).toBeNull();
+  });
+
+  it("groups rows with headers when grouping is active", async () => {
+    const { container } = renderAt("/crm?view=list&group=stage");
+    await waitFor(() => expect(screen.getByText("Лид 1")).toBeTruthy());
+
+    // The group header row spans the whole table and carries the count of
+    // rows rendered so far (the page limit applies inside groups too).
+    const groupHeader = container.querySelector("tbody tr td[colspan]");
+    expect(groupHeader?.textContent).toBe("Новый(80)");
+  });
+});
+
 describe("kanban column paging", () => {
   it("renders a page of cards and reveals the rest on request", async () => {
     renderAt("/crm");
