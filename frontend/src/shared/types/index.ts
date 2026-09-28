@@ -26,7 +26,6 @@ export interface Stage {
   is_closed: boolean;
   color: string;
   leads_count?: number;
-  revenue_sum?: string | number;
 }
 
 export interface Tag {
@@ -40,23 +39,16 @@ export interface Lead {
   name: string;
   inn: string;
   kpp: string;
-  company_name: string;
-  okved: string;
-  region: string;
   timezone: string;
   company_email: string | null;
   phone: string;
-  mobile: string;
   logist_email: string | null;
   logist_contact: string;
   logist_phone: string;
   credit_limit: string;
-  extra_info: string;
   first_call_date: string | null;
   next_call_date: string | null;
-  taken_by_logist: boolean;
   priority: number;
-  expected_revenue: string;
   stage: number;
   stage_name: string;
   tags: Tag[];

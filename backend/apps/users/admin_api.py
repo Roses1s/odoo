@@ -2,7 +2,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import Case, Count, IntegerField, Q, Sum, Value, When
+from django.db.models import Case, Count, IntegerField, Q, Value, When
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -93,7 +93,6 @@ class StatsView(APIView):
     def get(self, request):
         stages = Stage.objects.annotate(
             active_count=Count("leads", filter=Q(leads__is_archived=False)),
-            active_revenue=Sum("leads__expected_revenue", filter=Q(leads__is_archived=False)),
         ).order_by("sequence", "id")
         funnel = [
             {
@@ -101,7 +100,6 @@ class StatsView(APIView):
                 "name": stage.name,
                 "color": stage.color,
                 "count": stage.active_count,
-                "revenue": float(stage.active_revenue or 0),
             }
             for stage in stages
         ]

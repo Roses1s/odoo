@@ -215,7 +215,7 @@ function QuickCreate({ stageId, onDone }: { stageId: number; onDone: () => void 
       if ((n.length !== 10 && n.length !== 12) || !innChecksumOk(n)) {
         throw new Error("inn");
       }
-      return api.post("/crm/leads/", { name, inn: n, stage: stageId, expected_revenue: 0 });
+      return api.post("/crm/leads/", { name, inn: n, stage: stageId });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["leads"] });

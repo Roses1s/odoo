@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
@@ -34,7 +34,6 @@ class StageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Stage.objects.annotate(
             leads_count=Count("leads"),
-            revenue_sum=Sum("leads__expected_revenue"),
         ).order_by("sequence", "id")
 
     def destroy(self, request, *args, **kwargs):
@@ -88,7 +87,7 @@ class LeadViewSet(viewsets.ModelViewSet):
     serializer_class = LeadSerializer
     filterset_class = LeadFilter
     permission_classes = [IsAuthenticated, IsLeadOwnerOrManager]
-    ordering_fields = ("created_at", "priority", "expected_revenue", "name")
+    ordering_fields = ("created_at", "priority", "name")
     queryset = Lead.objects.select_related("stage", "assigned_to").prefetch_related("tags")
 
     def get_queryset(self):

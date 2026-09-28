@@ -7,9 +7,6 @@ from apps.crm.models import Attachment, Lead, Stage, Tag
 
 class StageSerializer(serializers.ModelSerializer):
     leads_count = serializers.IntegerField(read_only=True, required=False)
-    revenue_sum = serializers.DecimalField(
-        max_digits=14, decimal_places=2, read_only=True, required=False
-    )
 
     class Meta:
         model = Stage
@@ -20,7 +17,6 @@ class StageSerializer(serializers.ModelSerializer):
             "is_closed",
             "color",
             "leads_count",
-            "revenue_sum",
         )
 
 
@@ -77,23 +73,16 @@ class LeadSerializer(serializers.ModelSerializer):
             "name",
             "inn",
             "kpp",
-            "company_name",
-            "okved",
-            "region",
             "timezone",
             "company_email",
             "phone",
-            "mobile",
             "logist_email",
             "logist_contact",
             "logist_phone",
             "credit_limit",
-            "extra_info",
             "first_call_date",
             "next_call_date",
-            "taken_by_logist",
             "priority",
-            "expected_revenue",
             "stage",
             "stage_name",
             "tags",
