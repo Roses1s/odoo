@@ -13,6 +13,9 @@ env = environ.Env(
     JWT_ACCESS_TOKEN_LIFETIME_MINUTES=(int, 30),
     JWT_REFRESH_TOKEN_LIFETIME_DAYS=(int, 7),
     BACKUP_RETENTION_DAYS=(int, 30),
+    THROTTLE_ANON=(str, "60/min"),
+    THROTTLE_USER=(str, "600/min"),
+    THROTTLE_AUTH=(str, "60/min"),
 )
 
 env_file = BASE_DIR.parent / ".env"
@@ -147,6 +150,20 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.FlexiblePagination",
     "PAGE_SIZE": 20,
+    # Without this a leaked token could be used to pull the whole customer
+    # base in a loop; django-axes only guards the login form.
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env("THROTTLE_ANON"),
+        "user": env("THROTTLE_USER"),
+        "auth": env("THROTTLE_AUTH"),
+    },
+    # Requests arrive through nginx, so the client address has to be read from
+    # X-Forwarded-For — otherwise every anonymous caller shares one counter.
+    "NUM_PROXIES": 1,
 }
 
 SIMPLE_JWT = {

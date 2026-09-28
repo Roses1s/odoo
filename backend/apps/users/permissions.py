@@ -21,9 +21,13 @@ class IsLeadOwnerOrManager(BasePermission):
         user = request.user
         if user.role in ("admin", "manager"):
             return True
-        assigned = getattr(obj, "assigned_to_id", None)
-        created = getattr(obj, "created_by_id", None)
-        return assigned == user.id or created == user.id
+        # Assignment is the single source of truth, matching
+        # LeadViewSet.get_queryset: a lead handed to someone else must stop
+        # being visible to whoever created it.
+        if hasattr(obj, "assigned_to_id"):
+            return obj.assigned_to_id == user.id
+        # Objects that nobody is assigned to (shipments) belong to their author.
+        return getattr(obj, "created_by_id", None) == user.id
 
 
 class IsManagerOrReadOnly(BasePermission):

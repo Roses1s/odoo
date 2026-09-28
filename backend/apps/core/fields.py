@@ -1,5 +1,9 @@
 from rest_framework import serializers
 
+# Masks keep just enough of a value for a human to tell two records apart.
+# Anything more makes the original guessable: an INN carries a checksum, so
+# every digit shown shrinks the search space by an order of magnitude.
+
 
 class MaskedEmailField(serializers.CharField):
     """l***@romashka.ru"""
@@ -14,18 +18,20 @@ class MaskedEmailField(serializers.CharField):
 
 
 class MaskedPhoneField(serializers.CharField):
-    """+7 *** ***-45-67"""
+    """+7*******67"""
 
     def to_representation(self, value: str) -> str:
         if not value or len(value) < 7:
             return value
-        return f"{value[:3]} *** ***-{value[-5:]}"
+        prefix = value[:2] if value.startswith("+") else value[:1]
+        hidden = "*" * max(len(value) - len(prefix) - 2, 3)
+        return f"{prefix}{hidden}{value[-2:]}"
 
 
 class MaskedINNField(serializers.CharField):
-    """77****3456"""
+    """*******893"""
 
     def to_representation(self, value: str) -> str:
         if not value or len(value) < 6:
             return value
-        return f"{value[:2]}****{value[-4:]}"
+        return f"{'*' * (len(value) - 3)}{value[-3:]}"

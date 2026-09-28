@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import preloadScript from "../../../public/theme.js?raw";
 import html from "../../../index.html?raw";
 import { applyTheme, getTheme, setTheme, THEME_KEY, toggleTheme } from "./theme";
 
@@ -37,11 +38,17 @@ describe("theme switching", () => {
 });
 
 describe("pre-paint script", () => {
-  it("applies the stored theme before React mounts", () => {
+  it("runs before React mounts", () => {
     // Without this the app would flash white for dark-mode users on every load.
     const head = html.slice(0, html.indexOf("</head>"));
-    expect(head).toContain(THEME_KEY);
-    expect(head).toContain("classList.add(\"dark\")");
-    expect(html.indexOf(THEME_KEY)).toBeLessThan(html.indexOf("/src/main.tsx"));
+    expect(head).toContain('<script src="/theme.js">');
+    expect(html.indexOf("/theme.js")).toBeLessThan(html.indexOf("/src/main.tsx"));
+  });
+
+  it("is a separate file so the Content-Security-Policy can stay strict", () => {
+    // An inline script would be blocked by script-src 'self'.
+    expect(html).not.toMatch(/<script>[^<]/);
+    expect(preloadScript).toContain(THEME_KEY);
+    expect(preloadScript).toContain('classList.add("dark")');
   });
 });

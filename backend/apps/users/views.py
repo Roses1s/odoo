@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import permissions, status
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -29,6 +30,8 @@ def _set_refresh_cookie(response: Response, refresh: RefreshToken) -> None:
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes: list = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={"request": request})
@@ -48,6 +51,8 @@ class LoginView(APIView):
 class RefreshView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes: list = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
 
     def post(self, request):
         raw = request.COOKIES.get(REFRESH_COOKIE)
