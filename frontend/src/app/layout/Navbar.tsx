@@ -66,7 +66,7 @@ export function Navbar() {
                     navigate("/admin");
                   }}
                 >
-                  Reports
+                  Отчёты
                 </button>
               )}
               <button

@@ -44,6 +44,7 @@ export default {
           "chip-text": "rgb(var(--odoo-chip-text) / <alpha-value>)",
           avatar: "rgb(var(--odoo-avatar) / <alpha-value>)",
           link: "rgb(var(--odoo-link) / <alpha-value>)",
+          action: "rgb(var(--odoo-action) / <alpha-value>)",
           // Tag colours stay fixed: the reference dark mode does not repaint them.
           tag: {
             blue: { bg: "#D4E6F9", text: "#1A5276" },

@@ -76,7 +76,7 @@ export function ShipmentsPage() {
               return (
                 <tr key={s.id} className="h-10 border-b border-odoo-border-light bg-odoo-surface hover:bg-odoo-bg">
                   <td className="p-2">
-                    <Link className="text-odoo-primary" to={`/shipments/${s.id}`}>
+                    <Link className="text-odoo-action" to={`/shipments/${s.id}`}>
                       {s.id}
                     </Link>
                   </td>

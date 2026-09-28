@@ -145,7 +145,7 @@ export function ShipmentFormPage() {
           Назад
         </Button>
         {!isNew && selectedLead && (
-          <Link to={`/crm/leads/${selectedLead.id}`} className="text-sm text-odoo-primary">
+          <Link to={`/crm/leads/${selectedLead.id}`} className="text-sm text-odoo-action">
             Лид: {selectedLead.name}
           </Link>
         )}

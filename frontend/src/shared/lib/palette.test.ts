@@ -63,6 +63,7 @@ const LIGHT: Record<string, string> = {
   "odoo-chip-text": "#6F666A",
   "odoo-avatar": "#4B4B55",
   "odoo-link": "#00A09D",
+  "odoo-action": "#714B67",
 };
 
 describe("light palette", () => {

@@ -190,7 +190,7 @@ export function Chatter({
               if (searchOpen) setQuery("");
             }}
             className={`inline-flex h-7 w-7 items-center justify-center rounded-sm transition-colors hover:bg-odoo-bg ${
-              searchOpen ? "text-odoo-primary" : "text-odoo-text-muted hover:text-odoo-text"
+              searchOpen ? "text-odoo-action" : "text-odoo-text-muted hover:text-odoo-text"
             }`}
           >
             <Search className="h-4 w-4" />
@@ -202,12 +202,12 @@ export function Chatter({
               title="Вложения"
               onClick={() => setFilesOpen((v) => !v)}
               className={`relative inline-flex h-7 w-7 items-center justify-center rounded-sm transition-colors hover:bg-odoo-bg ${
-                filesOpen ? "text-odoo-primary" : "text-odoo-text-muted hover:text-odoo-text"
+                filesOpen ? "text-odoo-action" : "text-odoo-text-muted hover:text-odoo-text"
               }`}
             >
               <Paperclip className="h-4 w-4" />
               {files.length > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 text-[10px] font-semibold text-odoo-primary">
+                <span className="absolute -right-0.5 -top-0.5 text-[10px] font-semibold text-odoo-action">
                   {files.length}
                 </span>
               )}
@@ -256,7 +256,7 @@ export function Chatter({
                     type="button"
                     onClick={() => (onPreview ?? onDownload)?.(file)}
                     title={`${file.name} · ${formatSize(file.size)} — открыть просмотр`}
-                    className="min-w-0 flex-1 truncate text-left text-odoo-primary hover:underline"
+                    className="min-w-0 flex-1 truncate text-left text-odoo-action hover:underline"
                   >
                     {file.name}
                   </button>
@@ -455,7 +455,7 @@ export function Chatter({
                             type="button"
                             onClick={() => (onPreview ?? onDownload)?.(file)}
                             title={`${file.name} · ${formatSize(file.size)} — открыть просмотр`}
-                            className="inline-flex max-w-[240px] items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-surface px-1.5 py-0.5 text-[11px] text-odoo-primary transition-colors hover:bg-odoo-bg"
+                            className="inline-flex max-w-[240px] items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-surface px-1.5 py-0.5 text-[11px] text-odoo-action transition-colors hover:bg-odoo-bg"
                           >
                             <Paperclip className="h-3 w-3 shrink-0" />
                             <span className="truncate">{file.name}</span>

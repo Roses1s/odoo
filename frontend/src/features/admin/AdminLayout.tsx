@@ -20,7 +20,7 @@ export function AdminLayout() {
               to={l.to}
               end={l.end}
               className={({ isActive }) =>
-                `block rounded px-2 py-1.5 text-sm hover:bg-odoo-bg ${isActive ? "font-semibold text-odoo-primary" : "text-odoo-text"}`
+                `block rounded px-2 py-1.5 text-sm hover:bg-odoo-bg ${isActive ? "font-semibold text-odoo-action" : "text-odoo-text"}`
               }
             >
               {l.label}

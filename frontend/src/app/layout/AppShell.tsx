@@ -88,7 +88,7 @@ export function ControlPanel({
                   <span key={`${crumb.label}-${i}`} className="flex items-center gap-1">
                     {i > 0 && <span className="text-odoo-text-light">/</span>}
                     {crumb.to ? (
-                      <Link to={crumb.to} className="text-odoo-primary hover:underline">
+                      <Link to={crumb.to} className="text-odoo-action hover:underline">
                         {crumb.label}
                       </Link>
                     ) : (
@@ -164,7 +164,7 @@ export function ControlPanel({
             <span className="mr-1 inline-flex h-8 overflow-hidden rounded-[3px] border border-odoo-border bg-odoo-surface">
               <button
                 type="button"
-                className={`inline-flex w-8 items-center justify-center border-r border-odoo-border transition-colors ${view !== "list" ? "bg-odoo-accent-soft text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
+                className={`inline-flex w-8 items-center justify-center border-r border-odoo-border transition-colors ${view !== "list" ? "bg-odoo-accent-soft text-odoo-action" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
                 onClick={() => onView("kanban")}
                 title="Канбан"
               >
@@ -172,7 +172,7 @@ export function ControlPanel({
               </button>
               <button
                 type="button"
-                className={`inline-flex w-8 items-center justify-center transition-colors ${view === "list" ? "bg-odoo-accent-soft text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
+                className={`inline-flex w-8 items-center justify-center transition-colors ${view === "list" ? "bg-odoo-accent-soft text-odoo-action" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
                 onClick={() => onView("list")}
                 title="Список"
               >

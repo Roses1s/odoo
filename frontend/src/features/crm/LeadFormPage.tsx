@@ -489,7 +489,7 @@ export function LeadFormPage() {
                 {shipments.map((s) => (
                   <tr key={s.id} className="border-b border-odoo-border-light hover:bg-odoo-surface-hover">
                     <td className="px-2 py-1 pl-4 lg:pl-6">
-                      <Link className="text-odoo-primary hover:underline" to={`/shipments/${s.id}`}>
+                      <Link className="text-odoo-action hover:underline" to={`/shipments/${s.id}`}>
                         {s.id}
                       </Link>
                     </td>
@@ -504,7 +504,7 @@ export function LeadFormPage() {
             <div className="px-4 pt-2 lg:px-6">
               <button
                 type="button"
-                className="text-[13px] text-odoo-primary hover:underline"
+                className="text-[13px] text-odoo-action hover:underline"
                 onClick={() => navigate(`/shipments/new?lead=${id}`)}
               >
                 Добавить заявку

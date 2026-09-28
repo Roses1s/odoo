@@ -569,7 +569,7 @@ function Dropdown({ label, children, active }: { label: string; children: React.
     <div className="relative min-w-0 px-1">
       <button
         type="button"
-        className={`flex w-full items-center justify-between gap-2 rounded-[3px] px-2 py-1.5 text-[13px] ${active ? "bg-odoo-primary/10 font-medium text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
+        className={`flex w-full items-center justify-between gap-2 rounded-[3px] px-2 py-1.5 text-[13px] ${active ? "bg-odoo-primary/10 font-medium text-odoo-action" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
         onClick={() => setOpen((v) => !v)}
       >
         {label} <ChevronDown className="h-3.5 w-3.5" />
@@ -777,7 +777,7 @@ export function KanbanPage() {
           {filterActive && (
             <button
               type="button"
-              className="block w-full px-3 py-1.5 text-left text-sm text-odoo-primary hover:bg-odoo-bg"
+              className="block w-full px-3 py-1.5 text-left text-sm text-odoo-action hover:bg-odoo-bg"
               onClick={() => {
                 const next = new URLSearchParams(params);
                 ["priority", "stage", "tags", "is_archived"].forEach((k) => next.delete(k));

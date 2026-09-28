@@ -60,6 +60,7 @@
     --odoo-chip-text: 111 102 106; /* #6f666a */
     --odoo-avatar: 75 75 85; /* #4b4b55 */
     --odoo-link: 0 160 157; /* #00A09D */
+    --odoo-action: 113 75 103; /* #714B67 — interactive text; dark mode turns it blue like Odoo */
 
     --background: 210 17% 98%;
     --foreground: 210 11% 15%;
@@ -86,8 +87,9 @@
   .dark {
     color-scheme: dark;
 
-    --odoo-primary: 130 86 118; /* lifted so filled buttons keep their weight */
-    --odoo-primary-hover: 150 100 137;
+    /* Filled buttons keep the brand colour; only interactive text turns blue. */
+    --odoo-primary: 113 75 103;
+    --odoo-primary-hover: 138 92 125;
     --odoo-secondary: 0 176 173;
 
     --odoo-bg: 27 28 31;
@@ -97,13 +99,13 @@
     --odoo-column-head: 39 40 45;
     --odoo-track: 58 59 64;
 
-    --odoo-border: 53 54 59;
-    --odoo-border-light: 47 48 53;
+    --odoo-border: 62 64 70;
+    --odoo-border-light: 52 53 59;
 
     --odoo-text: 228 228 230;
     --odoo-text-soft: 200 200 204;
     --odoo-text-muted: 154 154 160;
-    --odoo-text-light: 111 112 118;
+    --odoo-text-light: 90 91 97;
 
     --odoo-success: 61 184 94;
     --odoo-warning: 255 193 7;
@@ -125,6 +127,7 @@
     --odoo-chip-text: 201 195 203;
     --odoo-avatar: 75 75 85;
     --odoo-link: 106 176 232;
+    --odoo-action: 106 176 232;
 
     --background: 220 10% 12%;
     --foreground: 210 17% 98%;

@@ -227,7 +227,7 @@ export function UsersPage() {
               <td className="p-2">
                 <button
                   type="button"
-                  className="mr-2 text-odoo-primary hover:underline"
+                  className="mr-2 text-odoo-action hover:underline"
                   onClick={() => startEdit(u)}
                 >
                   Изменить
