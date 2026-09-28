@@ -3,6 +3,25 @@ import { api } from "@/shared/api/client";
 import { unwrapList } from "@/shared/lib/http";
 import { Button } from "@/shared/ui/button";
 
+interface BackupFile {
+  name: string;
+  size: number;
+}
+
+interface BackupsResponse {
+  results: BackupFile[];
+  last_backup_at: string | null;
+  age_hours: number | null;
+  is_stale: boolean;
+}
+
+function staleMessage(ageHours: number | null): string {
+  if (ageHours === null) return "Резервных копий нет. Проверьте, работает ли celery.";
+  const days = Math.floor(ageHours / 24);
+  const age = days >= 1 ? `${days} дн.` : `${Math.round(ageHours)} ч.`;
+  return `Последней копии уже ${age}. Похоже, ночная задача не отрабатывает — проверьте celery.`;
+}
+
 export function SecurityPage() {
   const qc = useQueryClient();
   const attempts = useQuery({
@@ -14,8 +33,14 @@ export function SecurityPage() {
   });
   const backups = useQuery({
     queryKey: ["backups"],
-    queryFn: async () =>
-      unwrapList<{ name: string; size: number }>((await api.get("/admin/backups/")).data),
+    queryFn: async () => {
+      const { data } = await api.get<BackupsResponse>("/admin/backups/");
+      return {
+        files: unwrapList<BackupFile>(data),
+        isStale: Boolean(data?.is_stale),
+        ageHours: data?.age_hours ?? null,
+      };
+    },
   });
   const run = useMutation({
     mutationFn: () => api.post("/admin/backup/"),
@@ -31,13 +56,23 @@ export function SecurityPage() {
             Запустить бэкап
           </Button>
         </div>
+        {backups.data?.isStale && (
+          <p
+            role="alert"
+            className="mb-3 rounded-[4px] border border-odoo-danger/40 bg-odoo-danger/10 px-3 py-2 text-sm text-odoo-danger"
+          >
+            {staleMessage(backups.data.ageHours)}
+          </p>
+        )}
         <ul className="text-sm">
-          {(backups.data ?? []).map((b) => (
+          {(backups.data?.files ?? []).map((b) => (
             <li key={b.name} className="border-b border-odoo-border-light py-1.5">
               {b.name} <span className="text-odoo-text-muted">({Math.round(b.size / 1024)} КБ)</span>
             </li>
           ))}
-          {(backups.data ?? []).length === 0 && <li className="text-odoo-text-muted">Файлов нет</li>}
+          {(backups.data?.files ?? []).length === 0 && (
+            <li className="text-odoo-text-muted">Файлов нет</li>
+          )}
         </ul>
       </div>
       <div>

@@ -1,8 +1,10 @@
+from datetime import UTC, datetime
 from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Case, Count, IntegerField, Q, Value, When
+from django.utils.timezone import now
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -154,13 +156,19 @@ class BackupRunView(APIView):
         return Response({"task_id": result.id}, status=status.HTTP_202_ACCEPTED)
 
 
+# A backup older than this means the nightly job has not run: either celery
+# is down or the task is failing. Nobody finds out until a restore is needed,
+# so the age is reported to the interface.
+BACKUP_MAX_AGE_HOURS = 25
+
+
 class BackupListView(APIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
         directory = Path(getattr(settings, "BACKUP_DIR", "/backups"))
         if not directory.exists():
-            return Response({"results": []})
+            return Response({"results": [], "last_backup_at": None, "is_stale": True})
         files = sorted(
             [*directory.glob("crm_db_*.sql.gz"), *directory.glob("crm_media_*.tar.gz")],
             key=lambda f: f.name,
@@ -174,4 +182,17 @@ class BackupListView(APIView):
             }
             for f in files
         ]
-        return Response({"results": results})
+        database_dumps = [f for f in files if f.name.startswith("crm_db_")]
+        newest = max((f.stat().st_mtime for f in database_dumps), default=None)
+        last_backup = datetime.fromtimestamp(newest, tz=UTC) if newest else None
+        age_hours = (
+            (now() - last_backup).total_seconds() / 3600 if last_backup else None
+        )
+        return Response(
+            {
+                "results": results,
+                "last_backup_at": last_backup,
+                "age_hours": round(age_hours, 1) if age_hours is not None else None,
+                "is_stale": age_hours is None or age_hours > BACKUP_MAX_AGE_HOURS,
+            }
+        )

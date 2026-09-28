@@ -34,6 +34,21 @@ jobs:
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
       - run: ruff check --select F,I . --exclude '*/migrations/*'
+
+      # Models and migrations drifting apart is how a single field change
+      # silently turns into a rewrite of every table.
+      - run: python manage.py makemigrations --check --dry-run
+
+      # Production settings are otherwise only exercised on production.
+      - name: Django check with production settings
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.prod
+          SECRET_KEY: ci-only-production-settings-probe-key-fifty-characters-long
+          DATABASE_URL: postgres://crm_user:ci-password-not-the-default@localhost:5432/crm_db
+          ALLOWED_HOSTS: example.com
+          CSRF_TRUSTED_ORIGINS: https://example.com
+        run: python manage.py check
+
       - run: pytest -q
 
   frontend:

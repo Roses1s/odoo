@@ -26,6 +26,19 @@ ENV_BAK="$(mktemp /tmp/crm.env.XXXXXX)"
 cp -a .env "$ENV_BAK"
 trap 'cp -a "$ENV_BAK" "$ROOT/.env"; rm -f "$ENV_BAK"' EXIT
 
+# Migrations run inside the backend entrypoint, before the readiness probe.
+# If one of them fails halfway the schema is already changed, so take a copy
+# first — and stop the release if that copy cannot be made.
+if "${COMPOSE[@]}" ps --services --filter status=running 2>/dev/null | grep -qx backend; then
+  echo "==> бэкап перед миграциями"
+  if ! "${COMPOSE[@]}" exec -T backend /app/scripts/backup.sh; then
+    echo "ОШИБКА: бэкап не создан. Релиз остановлен, ничего не изменено." >&2
+    exit 1
+  fi
+else
+  echo "==> backend не запущен — бэкап пропущен (первый деплой)"
+fi
+
 echo "==> git fetch + reset --hard origin/$BRANCH"
 git fetch origin
 git reset --hard "origin/${BRANCH}"
