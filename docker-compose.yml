@@ -1,19 +1,12 @@
-# Generous ceilings so one leaking process cannot squeeze the others off a
-# single VPS. Check `docker stats` before lowering them.
-x-small-limits: &small-limits
-  resources:
-    limits:
-      memory: 256M
-
-x-medium-limits: &medium-limits
-  resources:
-    limits:
-      memory: 768M
-
-x-large-limits: &large-limits
-  resources:
-    limits:
-      memory: 1536M
+# Memory budget for a 2 GB host with no swap, measured against real usage:
+# each ceiling leaves a two- to threefold margin, and the total stays below
+# what the machine has, so a leak gets the offending container restarted
+# instead of letting the kernel pick a victim — usually PostgreSQL.
+#
+#   database 512  backend 512  worker 320  scheduler 192
+#   cache    128  nginx    64  frontend 64   = 1792 MB
+#
+# Raise a ceiling if `docker stats` shows a container above roughly half of it.
 
 # Without a size limit the json-file driver grows until the disk is full.
 x-logging: &default-logging
@@ -33,7 +26,9 @@ services:
     restart: unless-stopped
     logging: *default-logging
     deploy:
-      <<: *large-limits
+      resources:
+        limits:
+          memory: 512M
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-crm_db}
       POSTGRES_USER: ${POSTGRES_USER:-crm_user}
@@ -52,7 +47,9 @@ services:
     restart: unless-stopped
     logging: *default-logging
     deploy:
-      <<: *small-limits
+      resources:
+        limits:
+          memory: 128M
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -64,8 +61,10 @@ services:
     restart: unless-stopped
     logging: *default-logging
     deploy:
-      <<: *medium-limits
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60
+      resources:
+        limits:
+          memory: 512M
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 60
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
       RUN_MIGRATIONS: "1"
@@ -97,7 +96,9 @@ services:
     restart: unless-stopped
     logging: *default-logging
     deploy:
-      <<: *medium-limits
+      resources:
+        limits:
+          memory: 320M
     command: celery -A config worker -l info
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -117,7 +118,9 @@ services:
     restart: unless-stopped
     logging: *default-logging
     deploy:
-      <<: *small-limits
+      resources:
+        limits:
+          memory: 192M
     command: celery -A config beat -l info -s /backups/celerybeat-schedule
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -136,7 +139,9 @@ services:
     restart: unless-stopped
     logging: *default-logging
     deploy:
-      <<: *small-limits
+      resources:
+        limits:
+          memory: 64M
     expose:
       - "80"
 
@@ -145,7 +150,9 @@ services:
     restart: unless-stopped
     logging: *default-logging
     deploy:
-      <<: *small-limits
+      resources:
+        limits:
+          memory: 64M
     ports:
       - "80:80"
       - "443:443"
