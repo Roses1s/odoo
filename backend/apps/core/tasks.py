@@ -1,9 +1,11 @@
 import os
 import subprocess
+from datetime import timedelta
 
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils.timezone import now
 
 
 @shared_task
@@ -34,3 +36,21 @@ def daily_backup() -> str:
         # result containing an error string. Keep stderr in worker logs only.
         raise RuntimeError(f"backup failed: {result.stderr.strip() or 'unknown error'}")
     return result.stdout.strip() or "ok"
+
+
+@shared_task
+def prune_lead_history() -> str:
+    """Drop lead revisions older than the retention window.
+
+    simple_history writes a full copy of a lead on every save, so the history
+    table outgrows the data it describes. The chatter only ever shows the
+    recent entries, and the creation record is kept so a lead never looks like
+    it appeared out of nowhere.
+    """
+    from apps.crm.models import Lead
+
+    days = int(getattr(settings, "HISTORY_RETENTION_DAYS", 365))
+    cutoff = now() - timedelta(days=days)
+    stale = Lead.history.filter(history_date__lt=cutoff).exclude(history_type="+")
+    removed, _ = stale.delete()
+    return f"removed {removed} lead history rows older than {days} days"

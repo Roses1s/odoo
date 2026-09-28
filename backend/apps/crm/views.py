@@ -94,7 +94,8 @@ class LeadViewSet(viewsets.ModelViewSet):
     queryset = Lead.objects.select_related("stage", "assigned_to").prefetch_related("tags")
 
     def get_queryset(self):
-        qs = Lead.objects.select_related("stage", "assigned_to", "created_by").prefetch_related("tags")
+        qs = Lead.objects.select_related("stage", "assigned_to", "created_by")
+        qs = qs.prefetch_related("tags")
         user = self.request.user
         if user.role == "operator":
             # Assignment is the source of truth for current access. created_by is
@@ -192,7 +193,8 @@ class LeadViewSet(viewsets.ModelViewSet):
             initials = "SY"
             if user:
                 name = f"{user.first_name} {user.last_name}".strip() or user.email
-                initials = (user.first_name[:1] + user.last_name[:1]).upper() or user.email[:2].upper()
+                initials = (user.first_name[:1] + user.last_name[:1]).upper()
+                initials = initials or user.email[:2].upper()
             entries.append(
                 {
                     "id": f"hist-{hist.history_id}",
@@ -229,6 +231,11 @@ class LeadViewSet(viewsets.ModelViewSet):
             limit_mb = Attachment.MAX_SIZE // (1024 * 1024)
             return Response(
                 {"detail": f"Файл больше {limit_mb} МБ"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if Attachment.suffix_is_blocked(upload.name):
+            return Response(
+                {"detail": "Такой тип файла загружать нельзя"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         attachment = Attachment.objects.create(
@@ -279,6 +286,11 @@ class LeadViewSet(viewsets.ModelViewSet):
             if upload.size > Attachment.MAX_SIZE:
                 return Response(
                     {"detail": f"Файл «{upload.name}» больше {limit_mb} МБ"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if Attachment.suffix_is_blocked(upload.name):
+                return Response(
+                    {"detail": f"Файл «{upload.name}»: такой тип загружать нельзя"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         note = Note.objects.create(lead=lead, author=request.user, body=body)

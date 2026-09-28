@@ -69,7 +69,10 @@ export function ShipmentsPage() {
             {(data ?? []).map((s) => {
               const st = STATUS[s.status] ?? STATUS.new;
               return (
-                <tr key={s.id} className="h-10 border-b border-odoo-border-light bg-odoo-surface hover:bg-odoo-bg">
+                <tr
+                  key={s.id}
+                  className="h-10 border-b border-odoo-border-light bg-odoo-surface hover:bg-odoo-bg"
+                >
                   <td className="p-2">
                     <Link className="text-odoo-action" to={`/shipments/${s.id}`}>
                       {s.id}
@@ -79,7 +82,9 @@ export function ShipmentsPage() {
                   <td className="p-2">{s.route}</td>
                   <td className="p-2">{s.carrier_name || "—"}</td>
                   <td className="p-2">
-                    <span className={`rounded px-1.5 py-0.5 text-[11px] ${st.cls}`}>{st.label}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[11px] ${st.cls}`}>
+                      {st.label}
+                    </span>
                   </td>
                   <td className="p-2 text-odoo-text-muted">{s.created_at?.slice(0, 10)}</td>
                 </tr>

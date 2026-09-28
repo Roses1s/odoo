@@ -25,7 +25,8 @@ def lead_pre_save(sender, instance: Lead, **kwargs):
 def lead_post_save(sender, instance: Lead, created, **kwargs):
     if created:
         return
-    if instance.assigned_to_id and instance.assigned_to_id != getattr(instance, "_old_assigned", None):
+    previously_assigned = getattr(instance, "_old_assigned", None)
+    if instance.assigned_to_id and instance.assigned_to_id != previously_assigned:
         notify(
             instance.assigned_to,
             "Назначен лид",
@@ -80,5 +81,8 @@ def shipment_status_note(sender, instance: Shipment, created, **kwargs):
         Note.objects.create(
             lead=instance.lead,
             author=instance.created_by,
-            body=f"Заявка #{instance.pk}: {labels.get(old, old)} → {labels.get(instance.status, instance.status)}",
+            body=(
+                f"Заявка #{instance.pk}: "
+                f"{labels.get(old, old)} → {labels.get(instance.status, instance.status)}"
+            ),
         )

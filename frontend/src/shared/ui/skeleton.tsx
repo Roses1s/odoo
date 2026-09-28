@@ -45,7 +45,10 @@ export function ListRowSkeleton({ cols = 6 }: { cols?: number }) {
   return (
     <tr className="h-7 border-b border-odoo-border-light">
       {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} className={`px-2 py-1 ${i === 0 ? "pl-4" : ""} ${i === cols - 1 ? "pr-4" : ""}`}>
+        <td
+          key={i}
+          className={`px-2 py-1 ${i === 0 ? "pl-4" : ""} ${i === cols - 1 ? "pr-4" : ""}`}
+        >
           <div
             className="h-3 animate-pulse rounded bg-odoo-border-light"
             style={{ width: LIST_SKELETON_WIDTHS[i % LIST_SKELETON_WIDTHS.length] }}

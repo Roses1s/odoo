@@ -29,7 +29,12 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 flex h-10 shrink-0 items-center bg-odoo-surface px-3 text-odoo-text">
-      <button type="button" className="mr-2 inline-flex h-10 items-center md:hidden" onClick={() => setSheet(true)} aria-label="Меню">
+      <button
+        type="button"
+        className="mr-2 inline-flex h-10 items-center md:hidden"
+        onClick={() => setSheet(true)}
+        aria-label="Меню"
+      >
         <Menu className="h-5 w-5" />
       </button>
       <Link
@@ -40,7 +45,10 @@ export function Navbar() {
       >
         <LayoutGrid className="h-4 w-4" strokeWidth={1.75} />
       </Link>
-      <Link to="/crm" className="ml-2 inline-flex h-10 items-center text-[14px] font-semibold leading-none text-odoo-text">
+      <Link
+        to="/crm"
+        className="ml-2 inline-flex h-10 items-center text-[14px] font-semibold leading-none text-odoo-text"
+      >
         CRM
       </Link>
       <div className="ml-2 hidden h-10 items-center md:flex">{links}</div>
@@ -107,7 +115,10 @@ export function Navbar() {
 
       {sheet && (
         <div className="fixed inset-0 z-[60] bg-black/20 md:hidden" onClick={() => setSheet(false)}>
-          <div className="h-full w-64 bg-odoo-surface p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="h-full w-64 bg-odoo-surface p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-4 flex items-center justify-between">
               <span className="font-semibold">CRM</span>
               <button type="button" onClick={() => setSheet(false)}>

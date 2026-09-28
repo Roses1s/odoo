@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { mockApi } from "./api-mock";
+import { LIVE, mockApi } from "./api-mock";
+
+// These drive the interface against a stubbed API; the live suite covers the
+// contract with the real backend.
+test.skip(LIVE, "mocked scenarios do not apply to the live stack");
 
 test.beforeEach(async ({ page }) => {
   await mockApi(page);

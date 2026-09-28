@@ -412,8 +412,13 @@ export function Chatter({
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-1.5">
-                    <span className="text-[13px] font-bold text-odoo-text">{entry.author_name}</span>
-                    <span className="text-[12px] text-odoo-text-muted" title={absoluteTime(entry.created_at)}>
+                    <span className="text-[13px] font-bold text-odoo-text">
+                      {entry.author_name}
+                    </span>
+                    <span
+                      className="text-[12px] text-odoo-text-muted"
+                      title={absoluteTime(entry.created_at)}
+                    >
                       - {relativeTime(entry.created_at)}
                     </span>
                   </div>
@@ -450,20 +455,20 @@ export function Chatter({
                             />
                           </li>
                         ) : (
-                        <li key={file.id}>
-                          <button
-                            type="button"
-                            onClick={() => (onPreview ?? onDownload)?.(file)}
-                            title={`${file.name} · ${formatSize(file.size)} — открыть просмотр`}
-                            className="inline-flex max-w-[240px] items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-surface px-1.5 py-0.5 text-[11px] text-odoo-action transition-colors hover:bg-odoo-bg"
-                          >
-                            <Paperclip className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{file.name}</span>
-                            <span className="shrink-0 text-odoo-text-muted">
-                              {formatSize(file.size)}
-                            </span>
-                          </button>
-                        </li>
+                          <li key={file.id}>
+                            <button
+                              type="button"
+                              onClick={() => (onPreview ?? onDownload)?.(file)}
+                              title={`${file.name} · ${formatSize(file.size)} — открыть просмотр`}
+                              className="inline-flex max-w-[240px] items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-surface px-1.5 py-0.5 text-[11px] text-odoo-action transition-colors hover:bg-odoo-bg"
+                            >
+                              <Paperclip className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{file.name}</span>
+                              <span className="shrink-0 text-odoo-text-muted">
+                                {formatSize(file.size)}
+                              </span>
+                            </button>
+                          </li>
                         ),
                       )}
                     </ul>

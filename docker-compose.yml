@@ -1,3 +1,20 @@
+# Generous ceilings so one leaking process cannot squeeze the others off a
+# single VPS. Check `docker stats` before lowering them.
+x-small-limits: &small-limits
+  resources:
+    limits:
+      memory: 256M
+
+x-medium-limits: &medium-limits
+  resources:
+    limits:
+      memory: 768M
+
+x-large-limits: &large-limits
+  resources:
+    limits:
+      memory: 1536M
+
 # Without a size limit the json-file driver grows until the disk is full.
 x-logging: &default-logging
   driver: json-file
@@ -15,6 +32,8 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     logging: *default-logging
+    deploy:
+      <<: *large-limits
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-crm_db}
       POSTGRES_USER: ${POSTGRES_USER:-crm_user}
@@ -32,6 +51,8 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     logging: *default-logging
+    deploy:
+      <<: *small-limits
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -42,6 +63,8 @@ services:
     build: ./backend
     restart: unless-stopped
     logging: *default-logging
+    deploy:
+      <<: *medium-limits
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -73,6 +96,8 @@ services:
     build: ./backend
     restart: unless-stopped
     logging: *default-logging
+    deploy:
+      <<: *medium-limits
     command: celery -A config worker -l info
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -91,6 +116,8 @@ services:
     build: ./backend
     restart: unless-stopped
     logging: *default-logging
+    deploy:
+      <<: *small-limits
     command: celery -A config beat -l info -s /backups/celerybeat-schedule
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -108,6 +135,8 @@ services:
     build: ./frontend
     restart: unless-stopped
     logging: *default-logging
+    deploy:
+      <<: *small-limits
     expose:
       - "80"
 
@@ -115,6 +144,8 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     logging: *default-logging
+    deploy:
+      <<: *small-limits
     ports:
       - "80:80"
       - "443:443"

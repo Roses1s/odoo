@@ -25,7 +25,8 @@ export function LoginPage() {
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (!status || status === 502 || status === 503)
         setError("Бэкенд ещё не готов (502). Подождите 20 сек или перезапустите nginx.");
-      else if (status === 423 || status === 429) setError("Слишком много попыток. Подождите и повторите.");
+      else if (status === 423 || status === 429)
+        setError("Слишком много попыток. Подождите и повторите.");
       else if (status >= 500) setError("Ошибка сервера (500). Смотрите docker logs backend.");
       else setError("Неверный email или пароль");
     } finally {
@@ -44,7 +45,9 @@ export function LoginPage() {
           <h1 className="mt-1 text-[15px] font-semibold text-odoo-text">Вход в CRM</h1>
         </div>
         <label className="mb-3 block">
-          <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Email</span>
+          <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+            Email
+          </span>
           <input
             type="email"
             value={email}
@@ -54,7 +57,9 @@ export function LoginPage() {
           />
         </label>
         <label className="mb-4 block">
-          <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Пароль</span>
+          <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+            Пароль
+          </span>
           <input
             type="password"
             value={password}

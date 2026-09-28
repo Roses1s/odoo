@@ -13,6 +13,7 @@ env = environ.Env(
     JWT_ACCESS_TOKEN_LIFETIME_MINUTES=(int, 30),
     JWT_REFRESH_TOKEN_LIFETIME_DAYS=(int, 7),
     BACKUP_RETENTION_DAYS=(int, 30),
+    HISTORY_RETENTION_DAYS=(int, 365),
     THROTTLE_ANON=(str, "60/min"),
     THROTTLE_USER=(str, "600/min"),
     THROTTLE_AUTH=(str, "60/min"),
@@ -29,9 +30,12 @@ else:
 SECRET_KEY = env("SECRET_KEY", default="insecure-dev-key-change-me-min-50-characters-long")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "backend"])
-for _h in ("127.0.0.1", "localhost", "backend"):
-    if _h not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(_h)
+if DEBUG:
+    # Convenience for local work; production keeps the list it was given plus
+    # the loopback address the container healthcheck talks to (see prod.py).
+    for _host in ("127.0.0.1", "localhost", "backend"):
+        if _host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_host)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -210,6 +214,8 @@ CELERY_TIMEZONE = TIME_ZONE
 
 BACKUP_RETENTION_DAYS = env.int("BACKUP_RETENTION_DAYS", default=30)
 BACKUP_DIR = env("BACKUP_DIR", default="/backups")
+# How long a lead keeps its revision log; older rows are pruned nightly.
+HISTORY_RETENTION_DAYS = env.int("HISTORY_RETENTION_DAYS", default=365)
 
 CACHES = {
     "default": {

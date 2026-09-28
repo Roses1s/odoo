@@ -70,7 +70,11 @@ interface MockOptions {
   onWrite?: (method: string, url: string, payload: unknown) => void;
 }
 
+/** True when the suite runs against a real backend instead of the mock. */
+export const LIVE = process.env.E2E_LIVE === "1";
+
 export async function mockApi(page: Page, options: MockOptions = {}) {
+  if (LIVE) return;
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());

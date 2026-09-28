@@ -1,0 +1,233 @@
+// Extracted from KanbanPage: the board screen had grown past nine hundred
+// lines with data fetching, widgets and markup in one file.
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { MoreHorizontal, Plus } from "lucide-react";
+import { useState } from "react";
+import { api } from "@/shared/api/client";
+import type { Lead, Stage } from "@/shared/types";
+import { KanbanCardSkeleton } from "@/shared/ui/skeleton";
+import { LeadCard } from "./LeadCard";
+import { QuickCreate } from "./QuickCreate";
+import { STAGE_COLORS, stageColor } from "./stage-colors";
+
+// A column renders a page of cards; the rest appears on request, the way Odoo
+// pages its own kanban.
+const CARDS_PER_COLUMN = 20;
+
+export function Column({
+  stage,
+  leads,
+  loading,
+  canManage,
+  folded,
+  onFold,
+  allStages,
+}: {
+  stage: Stage;
+  leads: Lead[];
+  loading: boolean;
+  canManage: boolean;
+  folded: boolean;
+  onFold: () => void;
+  allStages: Stage[];
+}) {
+  const [visible, setVisible] = useState(CARDS_PER_COLUMN);
+  const shown = leads.slice(0, visible);
+  const hidden = leads.length - shown.length;
+  const { setNodeRef, isOver } = useDroppable({ id: `stage-${stage.id}` });
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(stage.name);
+  const [menu, setMenu] = useState(false);
+  const [quick, setQuick] = useState(false);
+  const color = stageColor(stage.color);
+
+  const patch = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.patch(`/crm/stages/${stage.id}/`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["stages"] }),
+  });
+  const remove = useMutation({
+    mutationFn: (fallback?: number) =>
+      api.delete(`/crm/stages/${stage.id}/${fallback ? `?fallback_stage_id=${fallback}` : ""}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["stages"] }),
+  });
+
+  if (folded) {
+    return (
+      <button
+        type="button"
+        onClick={onFold}
+        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-odoo-border-light bg-odoo-surface py-3"
+        style={{ borderTop: `3px solid ${color}` }}
+      >
+        <span className="mt-8 origin-center rotate-180 text-[12px] font-semibold tracking-wide text-odoo-text [writing-mode:vertical-rl]">
+          {stage.name} ({leads.length})
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex h-full w-[min(100vw-1rem,325px)] shrink-0 snap-center flex-col border-r border-odoo-border-light bg-odoo-surface md:w-[325px]">
+      <div className="shrink-0 bg-odoo-column-head px-2.5 pb-2 pt-2">
+        <div className="flex items-start justify-between gap-1">
+          <div className="min-w-0">
+            {editing && canManage ? (
+              <input
+                autoFocus
+                className="w-full rounded border border-odoo-primary px-1 text-[15px] font-semibold"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={() => {
+                  setEditing(false);
+                  if (name.trim() && name !== stage.name) patch.mutate({ name: name.trim() });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                className="truncate text-[15px] font-semibold leading-5 text-odoo-text"
+                onDoubleClick={() => canManage && setEditing(true)}
+              >
+                {stage.name}
+                <span className="ml-1 font-normal text-odoo-text-muted">{leads.length}</span>
+              </button>
+            )}
+          </div>
+          <div className="relative flex items-center gap-px">
+            <button
+              type="button"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-odoo-surface-sunken hover:text-odoo-text"
+              onClick={() => setQuick(true)}
+              title="Добавить лид"
+              aria-label="Добавить лид"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-6 w-5 items-center justify-center rounded-sm text-[17px] leading-none text-odoo-text-muted hover:bg-odoo-surface-sunken hover:text-odoo-text"
+              onClick={onFold}
+              title="Свернуть"
+              aria-label="Свернуть этап"
+            >
+              ‹
+            </button>
+            {canManage && (
+              <>
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-odoo-surface-sunken hover:text-odoo-text"
+                  onClick={() => setMenu((v) => !v)}
+                  title="Меню этапа"
+                  aria-label="Меню этапа"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+                {menu && (
+                  <div className="absolute right-0 top-6 z-20 min-w-[200px] rounded border border-odoo-border bg-odoo-surface py-1 shadow-lg">
+                    <button
+                      type="button"
+                      className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                      onClick={() => {
+                        setMenu(false);
+                        setEditing(true);
+                      }}
+                    >
+                      Переименовать
+                    </button>
+                    <button
+                      type="button"
+                      className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                      onClick={() => {
+                        setMenu(false);
+                        patch.mutate({ is_closed: !stage.is_closed });
+                      }}
+                    >
+                      {stage.is_closed ? "Открывающий этап" : "Закрывающий этап"}
+                    </button>
+                    <div className="flex flex-wrap gap-1 px-3 py-1.5">
+                      {Object.keys(STAGE_COLORS).map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          className="h-4 w-4 rounded-full border border-white shadow"
+                          style={{ background: STAGE_COLORS[c] }}
+                          onClick={() => {
+                            setMenu(false);
+                            patch.mutate({ color: c });
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="block w-full px-3 py-1.5 text-left text-sm text-odoo-danger hover:bg-odoo-bg"
+                      onClick={() => {
+                        setMenu(false);
+                        const other = allStages.find((s) => s.id !== stage.id);
+                        if (leads.length && other) remove.mutate(other.id);
+                        else remove.mutate(undefined);
+                      }}
+                    >
+                      Удалить
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        <div className="mt-1 flex items-center gap-2">
+          <div className="h-2.5 w-[150px] overflow-hidden bg-odoo-track">
+            <div
+              className="h-full min-w-1"
+              style={{
+                width: `${Math.min(100, Math.max(4, leads.length * 12))}%`,
+                backgroundColor: color,
+              }}
+            />
+          </div>
+        </div>
+      </div>
+      <div
+        ref={setNodeRef}
+        className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable] ${isOver ? "bg-odoo-drop" : "bg-odoo-surface"}`}
+      >
+        <SortableContext
+          items={shown.map((l) => `lead-${l.id}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => <KanbanCardSkeleton key={i} />)
+            : shown.map((lead) => <LeadCard key={lead.id} lead={lead} />)}
+        </SortableContext>
+        {hidden > 0 && !loading && (
+          <button
+            type="button"
+            onClick={() => setVisible((n) => n + CARDS_PER_COLUMN)}
+            className="mx-2.5 mb-2 rounded-[3px] border border-dashed border-odoo-border px-2 py-1.5 text-[13px] text-odoo-text-muted transition-colors hover:bg-odoo-surface-hover hover:text-odoo-text"
+          >
+            Показать ещё {Math.min(CARDS_PER_COLUMN, hidden)} из {leads.length}
+          </button>
+        )}
+        {quick ? (
+          <QuickCreate stageId={stage.id} onDone={() => setQuick(false)} />
+        ) : (
+          <button
+            type="button"
+            className="flex w-full items-center gap-1 px-2.5 py-2 text-left text-[13px] text-odoo-text-muted hover:bg-odoo-surface-hover hover:text-odoo-text"
+            onClick={() => setQuick(true)}
+          >
+            <Plus className="h-3.5 w-3.5" /> Добавить
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

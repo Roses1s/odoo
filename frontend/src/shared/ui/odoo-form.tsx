@@ -28,11 +28,19 @@ export function FormSheetBg({ children }: { children: ReactNode }) {
 export function FormSheet({ children }: { children: ReactNode }) {
   // .o_form_sheet: white, 1px border, radius 4px, padding 16px (24px on lg)
   return (
-    <div className="rounded-[4px] border border-odoo-border bg-odoo-surface p-4 lg:p-6">{children}</div>
+    <div className="rounded-[4px] border border-odoo-border bg-odoo-surface p-4 lg:p-6">
+      {children}
+    </div>
   );
 }
 
-export function FormAlert({ tone = "danger", children }: { tone?: "danger" | "warning"; children: ReactNode }) {
+export function FormAlert({
+  tone = "danger",
+  children,
+}: {
+  tone?: "danger" | "warning";
+  children: ReactNode;
+}) {
   const tones = {
     danger: "border-odoo-danger/30 bg-red-50 text-odoo-danger",
     warning: "border-amber-300 bg-amber-50 text-amber-800",

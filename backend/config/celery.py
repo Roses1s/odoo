@@ -14,4 +14,9 @@ app.conf.beat_schedule = {
         "task": "apps.core.tasks.daily_backup",
         "schedule": crontab(hour=3, minute=0),
     },
+    # Runs after the backup, so a pruned revision is still in last night's dump.
+    "weekly-history-prune": {
+        "task": "apps.core.tasks.prune_lead_history",
+        "schedule": crontab(hour=4, minute=30, day_of_week=0),
+    },
 }

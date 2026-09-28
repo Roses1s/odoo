@@ -93,7 +93,9 @@ export function ShipmentFormPage() {
       const s = shipQ.data as Record<string, unknown>;
       setForm((f) => ({
         ...f,
-        ...Object.fromEntries(Object.keys(empty).map((k) => [k, s[k] ?? (empty as never)[k as keyof typeof empty]])),
+        ...Object.fromEntries(
+          Object.keys(empty).map((k) => [k, s[k] ?? (empty as never)[k as keyof typeof empty]]),
+        ),
         cargo_weight: String(s.cargo_weight ?? ""),
         cargo_volume: String(s.cargo_volume ?? ""),
       }));
@@ -176,7 +178,9 @@ export function ShipmentFormPage() {
               {error && <p className="mb-3 text-sm text-odoo-danger">{error}</p>}
               <FormSection title="Лид">
                 <label className="col-span-2">
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Компания</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Компания
+                  </span>
                   <select
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.lead || ""}
@@ -193,7 +197,9 @@ export function ShipmentFormPage() {
               </FormSection>
               <FormSection title="Маршрут">
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Город погрузки</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Город погрузки
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.city_loading}
@@ -201,7 +207,9 @@ export function ShipmentFormPage() {
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Город выгрузки</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Город выгрузки
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.city_unloading}
@@ -209,7 +217,9 @@ export function ShipmentFormPage() {
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Адрес погрузки</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Адрес погрузки
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.address_loading}
@@ -217,7 +227,9 @@ export function ShipmentFormPage() {
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Адрес выгрузки</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Адрес выгрузки
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.address_unloading}
@@ -227,7 +239,9 @@ export function ShipmentFormPage() {
               </FormSection>
               <FormSection title="Контакты на погрузке">
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Контактное лицо</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Контактное лицо
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.contact_loading_name}
@@ -235,7 +249,9 @@ export function ShipmentFormPage() {
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Телефон</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Телефон
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.contact_loading_phone}
@@ -245,7 +261,9 @@ export function ShipmentFormPage() {
               </FormSection>
               <FormSection title="Контакты на выгрузке">
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Контактное лицо</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Контактное лицо
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.contact_unloading_name}
@@ -253,7 +271,9 @@ export function ShipmentFormPage() {
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Телефон</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Телефон
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.contact_unloading_phone}
@@ -263,7 +283,9 @@ export function ShipmentFormPage() {
               </FormSection>
               <FormSection title="Перевозчик и груз">
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Перевозчик</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Перевозчик
+                  </span>
                   <input
                     className="mb-1 w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     placeholder="Поиск..."
@@ -284,7 +306,9 @@ export function ShipmentFormPage() {
                   </select>
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Тип транспорта</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Тип транспорта
+                  </span>
                   <select
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.transport_type}
@@ -299,7 +323,9 @@ export function ShipmentFormPage() {
                   </select>
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Вес</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Вес
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.cargo_weight}
@@ -307,7 +333,9 @@ export function ShipmentFormPage() {
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Объём</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Объём
+                  </span>
                   <input
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     value={form.cargo_volume}
@@ -315,7 +343,9 @@ export function ShipmentFormPage() {
                   />
                 </label>
                 <label className="col-span-1 md:col-span-2">
-                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">Комментарий</span>
+                  <span className="mb-1 block text-xs font-medium uppercase text-odoo-text-muted">
+                    Комментарий
+                  </span>
                   <textarea
                     className="w-full rounded border border-odoo-border px-2.5 py-1.5 text-sm"
                     rows={3}

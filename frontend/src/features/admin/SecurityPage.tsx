@@ -27,9 +27,13 @@ export function SecurityPage() {
   const attempts = useQuery({
     queryKey: ["login-attempts"],
     queryFn: async () =>
-      unwrapList<{ id: number; username: string; ip_address: string; attempt_time: string; failures: number }>(
-        (await api.get("/admin/login-attempts/")).data,
-      ),
+      unwrapList<{
+        id: number;
+        username: string;
+        ip_address: string;
+        attempt_time: string;
+        failures: number;
+      }>((await api.get("/admin/login-attempts/")).data),
   });
   const backups = useQuery({
     queryKey: ["backups"],
@@ -67,7 +71,8 @@ export function SecurityPage() {
         <ul className="text-sm">
           {(backups.data?.files ?? []).map((b) => (
             <li key={b.name} className="border-b border-odoo-border-light py-1.5">
-              {b.name} <span className="text-odoo-text-muted">({Math.round(b.size / 1024)} КБ)</span>
+              {b.name}{" "}
+              <span className="text-odoo-text-muted">({Math.round(b.size / 1024)} КБ)</span>
             </li>
           ))}
           {(backups.data?.files ?? []).length === 0 && (

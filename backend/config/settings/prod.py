@@ -21,6 +21,12 @@ _database = DATABASES["default"]  # noqa: F405
 if not _database.get("PASSWORD") or _database.get("PASSWORD") == "crm_secure_password":
     raise ImproperlyConfigured("Production database password must be set to a non-default value")
 
+# The compose healthcheck calls http://127.0.0.1:8000/api/health/ from inside
+# the container, so that one host stays allowed; everything else has to be
+# listed explicitly in ALLOWED_HOSTS.
+if "127.0.0.1" not in ALLOWED_HOSTS:  # noqa: F405
+    ALLOWED_HOSTS.append("127.0.0.1")  # noqa: F405
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
@@ -44,5 +50,12 @@ CSRF_TRUSTED_ORIGINS = env.list(
         "http://77.222.38.191",
     ],
 )
+# Browsers may only call the API from the addresses the site is served on;
+# the development default (localhost:5173) must not survive into production.
+CORS_ALLOWED_ORIGINS = env.list(  # noqa: F405
+    "CORS_ALLOWED_ORIGINS",
+    default=[origin for origin in CSRF_TRUSTED_ORIGINS if origin.startswith("https://")],
+)
+
 EXPOSE_DJANGO_ADMIN = env.bool("EXPOSE_DJANGO_ADMIN", default=False)
 EXPOSE_API_DOCS = env.bool("EXPOSE_API_DOCS", default=False)

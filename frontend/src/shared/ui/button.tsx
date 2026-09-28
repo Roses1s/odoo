@@ -9,10 +9,8 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
   const styles: Record<Variant, string> = {
-    primary:
-      "bg-odoo-primary text-white hover:bg-odoo-primary-hover",
-    secondary:
-      "bg-odoo-surface text-odoo-text border border-odoo-border hover:bg-odoo-bg",
+    primary: "bg-odoo-primary text-white hover:bg-odoo-primary-hover",
+    secondary: "bg-odoo-surface text-odoo-text border border-odoo-border hover:bg-odoo-bg",
     danger: "bg-odoo-danger text-white hover:opacity-90",
     ghost: "text-odoo-text-muted hover:text-odoo-text hover:bg-odoo-bg",
   };

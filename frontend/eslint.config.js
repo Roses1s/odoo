@@ -6,6 +6,15 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   { ignores: ["dist"] },
   {
+    rules: {
+      // A leading underscore marks an argument kept for signature shape only.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+    },
+  },
+  {
     // Plain browser script served as-is from public/, linted like the rest.
     files: ["public/**/*.js"],
     languageOptions: {

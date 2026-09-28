@@ -33,7 +33,8 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
-      - run: ruff check --select F,I . --exclude '*/migrations/*'
+      # Full rule set from pyproject.toml; generated migrations are exempt.
+      - run: ruff check . --exclude '*/migrations/*'
 
       # Models and migrations drifting apart is how a single field change
       # silently turns into a rewrite of every table.
@@ -49,7 +50,9 @@ jobs:
           CSRF_TRUSTED_ORIGINS: https://example.com
         run: python manage.py check
 
-      - run: pytest -q
+      # Coverage is reported, not enforced: a threshold picked blind would
+      # either be meaningless or block honest work.
+      - run: pytest -q --cov=apps --cov-report=term-missing:skip-covered
 
   frontend:
     runs-on: ubuntu-latest
@@ -64,6 +67,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm run format:check
       - run: npm run lint
       - run: npm test -- --run
       - run: npm run build
@@ -85,6 +89,71 @@ jobs:
         working-directory: e2e
       - run: npm test
         working-directory: e2e
+
+  e2e-full-stack:
+    # The mocked run above checks the interface; this one checks that the
+    # interface and the real API still agree with each other.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Start the stack
+        run: |
+          cat > .env <<'ENV'
+          SECRET_KEY=ci-full-stack-run-secret-key-at-least-fifty-characters-long
+          POSTGRES_DB=crm_db
+          POSTGRES_USER=crm_user
+          POSTGRES_PASSWORD=ci-password-not-the-default
+          DATABASE_URL=postgres://crm_user:ci-password-not-the-default@db:5432/crm_db
+          DEBUG=1
+          SEED=1
+          ALLOWED_HOSTS=localhost,127.0.0.1,backend,frontend
+          CORS_ALLOWED_ORIGINS=http://localhost:8080
+          CSRF_TRUSTED_ORIGINS=http://localhost:8080
+          DEMO_ADMIN_PASSWORD=ci-admin-password
+          DEMO_MANAGER_PASSWORD=ci-manager-password
+          DEMO_OPERATOR_PASSWORD=ci-operator-password
+          ENV
+          docker compose up -d --build db redis backend frontend
+
+      - name: Wait for the backend to be ready
+        run: |
+          for i in $(seq 1 60); do
+            if docker compose exec -T backend python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/health/',timeout=3)" 2>/dev/null; then
+              echo "backend ready"; exit 0
+            fi
+            sleep 5
+          done
+          echo "backend did not become ready"; docker compose logs backend; exit 1
+
+      - name: Expose the app on localhost:8080
+        run: |
+          docker run -d --name e2e-proxy --network "$(docker compose ps -q backend | xargs docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{end}}')" \
+            -p 8080:80 -v "$PWD/nginx/e2e.conf:/etc/nginx/conf.d/default.conf:ro" nginx:alpine
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/ >/dev/null && exit 0
+            sleep 2
+          done
+          echo "proxy did not come up"; docker logs e2e-proxy; exit 1
+
+      - run: npm ci --prefix e2e
+      - run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - name: Run the scenarios against the running stack
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          E2E_LIVE: "1"
+        run: npm test
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail 100
 
   docker-build:
     runs-on: ubuntu-latest

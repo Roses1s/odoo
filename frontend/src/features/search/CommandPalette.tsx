@@ -31,7 +31,8 @@ export function CommandPalette() {
   const { data } = useQuery({
     queryKey: ["search", debounced],
     enabled: open && debounced.length > 1,
-    queryFn: async () => unwrapList<Lead>((await api.get(`/crm/leads/?search=${encodeURIComponent(debounced)}`)).data),
+    queryFn: async () =>
+      unwrapList<Lead>((await api.get(`/crm/leads/?search=${encodeURIComponent(debounced)}`)).data),
   });
 
   if (!open) return null;

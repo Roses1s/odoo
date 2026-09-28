@@ -3,9 +3,9 @@ import { ownerInitials, ownerLabel } from "./owner";
 
 describe("ownerLabel", () => {
   it("prefers the full name", () => {
-    expect(ownerLabel({ assigned_to_name: "Иван Костылев", assigned_to_email: "ivan@crm.ru" })).toBe(
-      "Иван Костылев",
-    );
+    expect(
+      ownerLabel({ assigned_to_name: "Иван Костылев", assigned_to_email: "ivan@crm.ru" }),
+    ).toBe("Иван Костылев");
   });
 
   it("falls back to the email when the account has no name", () => {

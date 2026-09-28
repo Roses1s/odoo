@@ -206,39 +206,39 @@ export function UsersPage() {
             .slice()
             .sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) || a.id - b.id)
             .map((u, index) => (
-            <tr
-              key={u.id}
-              className={`h-10 border-b border-odoo-border-light hover:bg-odoo-bg ${
-                editing?.id === u.id ? "bg-odoo-bg" : "bg-odoo-surface"
-              }`}
-            >
-              <td className="p-2 text-odoo-text-muted">{index + 1}</td>
-              <td className="p-2">{u.email}</td>
-              <td className="p-2">
-                {fullName(u) || <span className="text-odoo-text-light">— не указано —</span>}
-              </td>
-              <td className="p-2">{ROLE_LABEL[u.role] ?? u.role}</td>
-              <td className="p-2">{u.is_active ? "да" : "нет"}</td>
-              <td className="p-2">
-                <button
-                  type="button"
-                  className="mr-2 text-odoo-action hover:underline"
-                  onClick={() => startEdit(u)}
-                >
-                  Изменить
-                </button>
-                <button
-                  type="button"
-                  className="text-odoo-danger hover:underline"
-                  onClick={() => {
-                    if (confirm(`Удалить ${u.email}?`)) remove.mutate(u.id);
-                  }}
-                >
-                  Удалить
-                </button>
-              </td>
-            </tr>
-          ))}
+              <tr
+                key={u.id}
+                className={`h-10 border-b border-odoo-border-light hover:bg-odoo-bg ${
+                  editing?.id === u.id ? "bg-odoo-bg" : "bg-odoo-surface"
+                }`}
+              >
+                <td className="p-2 text-odoo-text-muted">{index + 1}</td>
+                <td className="p-2">{u.email}</td>
+                <td className="p-2">
+                  {fullName(u) || <span className="text-odoo-text-light">— не указано —</span>}
+                </td>
+                <td className="p-2">{ROLE_LABEL[u.role] ?? u.role}</td>
+                <td className="p-2">{u.is_active ? "да" : "нет"}</td>
+                <td className="p-2">
+                  <button
+                    type="button"
+                    className="mr-2 text-odoo-action hover:underline"
+                    onClick={() => startEdit(u)}
+                  >
+                    Изменить
+                  </button>
+                  <button
+                    type="button"
+                    className="text-odoo-danger hover:underline"
+                    onClick={() => {
+                      if (confirm(`Удалить ${u.email}?`)) remove.mutate(u.id);
+                    }}
+                  >
+                    Удалить
+                  </button>
+                </td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </div>

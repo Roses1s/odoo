@@ -156,6 +156,23 @@ class Attachment(models.Model):
 
     MAX_SIZE = 20 * 1024 * 1024
 
+    # A CRM has no reason to store programs. Everything else — documents,
+    # spreadsheets, images, archives — is accepted, so the list denies rather
+    # than allows.
+    BLOCKED_SUFFIXES = frozenset(
+        {
+            ".apk", ".app", ".bat", ".cmd", ".com", ".cpl", ".dll", ".exe",
+            ".jar", ".js", ".jse", ".lnk", ".msi", ".ps1", ".reg", ".scr",
+            ".sh", ".vb", ".vbe", ".vbs", ".wsf",
+        }
+    )
+
+    @classmethod
+    def suffix_is_blocked(cls, filename: str) -> bool:
+        from pathlib import PurePosixPath
+
+        return PurePosixPath(filename.lower()).suffix in cls.BLOCKED_SUFFIXES
+
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="attachments")
     # Set when the file was attached to a chatter note; removing the note
     # removes its files too. Null means the file was added to the lead itself.

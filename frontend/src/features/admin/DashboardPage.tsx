@@ -33,7 +33,10 @@ export function DashboardPage() {
           ["Заявки", data?.shipments_total],
           ["Пользователи", data?.users_total],
         ].map(([label, val]) => (
-          <div key={String(label)} className="rounded-md border border-odoo-border-light bg-odoo-surface p-4 shadow-sm">
+          <div
+            key={String(label)}
+            className="rounded-md border border-odoo-border-light bg-odoo-surface p-4 shadow-sm"
+          >
             <div className="text-xs uppercase text-odoo-text-muted">{label}</div>
             <div className="mt-1 text-xl font-semibold">{val ?? "—"}</div>
           </div>

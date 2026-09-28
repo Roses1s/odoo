@@ -40,7 +40,9 @@ class ShipmentViewSet(viewsets.ModelViewSet):
         lead = serializer.validated_data["lead"]
         user = self.request.user
         if user.role == "operator" and lead.assigned_to_id != user.id:
-            raise serializers.ValidationError({"lead": "Можно создавать заявки только по своим лидам"})
+            raise serializers.ValidationError(
+                {"lead": "Можно создавать заявки только по своим лидам"}
+            )
         contact = lead.logist_contact or ""
         extra = {}
         if not serializer.validated_data.get("contact_loading_phone") and contact:
@@ -68,7 +70,8 @@ class LeadShipmentsViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         lead_id = self.kwargs["lead_pk"]
-        qs = Shipment.objects.filter(lead_id=lead_id).select_related("lead", "carrier", "created_by")
+        qs = Shipment.objects.filter(lead_id=lead_id)
+        qs = qs.select_related("lead", "carrier", "created_by")
         user = self.request.user
         if user.role == "operator":
             qs = qs.filter(created_by=user)

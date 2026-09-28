@@ -35,7 +35,10 @@ export function LauncherPage() {
       <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-md border border-odoo-border-light bg-odoo-surface p-5 shadow-sm">
+            <div
+              key={i}
+              className="rounded-md border border-odoo-border-light bg-odoo-surface p-5 shadow-sm"
+            >
               <Skeleton className="mb-3 h-10 w-10" />
               <Skeleton className="mb-2 h-4 w-24" />
               <Skeleton className="h-3 w-full" />

@@ -62,7 +62,10 @@ export function FilePreview({
         className="relative flex max-h-full w-full max-w-[900px] flex-col overflow-hidden rounded-[4px] border border-odoo-border bg-odoo-surface shadow-lg"
       >
         <div className="flex items-center gap-2 border-b border-odoo-border-light px-3 py-2">
-          <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-odoo-text" title={file.name}>
+          <span
+            className="min-w-0 flex-1 truncate text-[14px] font-medium text-odoo-text"
+            title={file.name}
+          >
             {file.name}
           </span>
           <span className="shrink-0 text-[12px] text-odoo-text-muted">{formatSize(file.size)}</span>
@@ -85,7 +88,9 @@ export function FilePreview({
         </div>
 
         <div className="min-h-[200px] flex-1 overflow-auto bg-odoo-bg p-3">
-          {loading && <p className="py-10 text-center text-[13px] text-odoo-text-muted">Загрузка…</p>}
+          {loading && (
+            <p className="py-10 text-center text-[13px] text-odoo-text-muted">Загрузка…</p>
+          )}
 
           {!loading && error && (
             <p role="alert" className="py-10 text-center text-[13px] text-odoo-danger">
@@ -98,7 +103,11 @@ export function FilePreview({
           )}
 
           {!loading && !error && kind === "pdf" && url && (
-            <iframe src={url} title={file.name} className="h-[70vh] w-full border-0 bg-odoo-surface" />
+            <iframe
+              src={url}
+              title={file.name}
+              className="h-[70vh] w-full border-0 bg-odoo-surface"
+            />
           )}
 
           {!loading && !error && kind === "text" && (
