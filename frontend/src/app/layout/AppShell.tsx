@@ -71,7 +71,7 @@ export function ControlPanel({
         )}
         {onSearch && (
           <div className="pointer-events-none order-last flex w-full justify-center md:absolute md:inset-x-0 md:order-none md:w-auto">
-            <label className="pointer-events-auto flex h-9 w-full items-stretch overflow-hidden rounded-[3px] border border-[#8FB9B8] bg-white shadow-sm focus-within:ring-1 focus-within:ring-[#8FB9B8] md:w-[min(100%,600px)]">
+            <div className="pointer-events-auto flex h-9 w-full items-stretch overflow-hidden rounded-[3px] border border-[#8FB9B8] bg-white shadow-sm focus-within:ring-1 focus-within:ring-[#8FB9B8] md:w-[min(100%,600px)]">
               <span className="flex items-center pl-3 pr-2">
                 <Search className="h-4 w-4 shrink-0 text-[#5f6b70]" />
               </span>
@@ -79,12 +79,19 @@ export function ControlPanel({
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
                 placeholder="Поиск..."
+                aria-label="Поиск лидов"
                 className="min-w-0 flex-1 bg-transparent pr-2 text-[14px] outline-none placeholder:text-[#8b9397]"
               />
-              <span className="flex w-9 shrink-0 items-center justify-center border-l border-[#c8d8d8] text-[#4e5c61]">
+              <button
+                type="button"
+                className="flex w-9 shrink-0 items-center justify-center border-l border-[#c8d8d8] text-[#4e5c61] hover:bg-[#f4f7f7]"
+                onClick={onSettings}
+                title="Параметры поиска"
+                aria-label="Параметры поиска"
+              >
                 <ChevronDown className="h-4 w-4" />
-              </span>
-            </label>
+              </button>
+            </div>
           </div>
         )}
         <div className="relative z-10 ml-auto flex items-center gap-1">
@@ -108,8 +115,8 @@ export function ControlPanel({
               </button>
             </span>
           )}
-          {children}
         </div>
+        {children}
       </div>
     </div>
   );

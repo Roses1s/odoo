@@ -471,10 +471,10 @@ const dropAnimation: DropAnimation = {
 function Dropdown({ label, children, active }: { label: string; children: React.ReactNode; active?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="relative">
+    <div className="relative min-w-0 px-1">
       <button
         type="button"
-        className={`flex items-center gap-0.5 rounded px-2 py-1 text-sm ${active ? "bg-odoo-primary/10 font-medium text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
+        className={`flex w-full items-center justify-between gap-2 rounded-[3px] px-2 py-1.5 text-[13px] ${active ? "bg-odoo-primary/10 font-medium text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
         onClick={() => setOpen((v) => !v)}
       >
         {label} <ChevronDown className="h-3.5 w-3.5" />
@@ -482,7 +482,7 @@ function Dropdown({ label, children, active }: { label: string; children: React.
       {open && (
         <>
           <button type="button" className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-label="Закрыть" />
-          <div className="absolute left-0 z-20 mt-1 min-w-[200px] rounded border border-odoo-border bg-white py-1 shadow-lg" onClick={() => setOpen(false)}>
+          <div className="absolute left-0 z-50 mt-1 max-h-[360px] min-w-full overflow-y-auto rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg" onClick={() => setOpen(false)}>
             {children}
           </div>
         </>
@@ -652,7 +652,7 @@ export function KanbanPage() {
         onView={(v) => setFilter("view", v === "list" ? "list" : "")}
       >
         {settingsOpen && (
-          <div className="absolute right-3 top-11 z-40 flex min-w-[220px] flex-col rounded border border-odoo-border bg-white py-1 shadow-lg">
+          <div className="absolute left-1/2 top-full z-40 grid w-[min(calc(100vw-1.5rem),600px)] -translate-x-1/2 grid-cols-2 divide-x divide-odoo-border-light rounded-b-[3px] border border-t-0 border-odoo-border bg-white p-1 shadow-lg">
         <Dropdown label="Фильтры" active={filterActive}>
           <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("priority", "")}>
             Все приоритеты
