@@ -84,6 +84,11 @@ export function UsersPage() {
     onError: () => setError("Нельзя удалить этого пользователя"),
   });
 
+  const firstNameIsEmail = form.first_name.includes("@");
+  const lastNameIsEmail = form.last_name.includes("@");
+  const nameIsEmail = firstNameIsEmail || lastNameIsEmail;
+  const nameHint = "Похоже, это email — впишите имя, адрес указывается в поле Email";
+
   function startEdit(u: User) {
     setEditing(u);
     setForm({
@@ -118,7 +123,11 @@ export function UsersPage() {
         <label>
           <span className="mb-1 block text-[11px] uppercase text-odoo-text-muted">Имя</span>
           <input
-            className="rounded border border-odoo-border px-2 py-1.5 text-sm"
+            aria-invalid={firstNameIsEmail}
+            aria-label="Имя"
+            className={`rounded border px-2 py-1.5 text-sm ${
+              firstNameIsEmail ? "border-odoo-danger" : "border-odoo-border"
+            }`}
             placeholder="Иван"
             value={form.first_name}
             onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
@@ -127,7 +136,11 @@ export function UsersPage() {
         <label>
           <span className="mb-1 block text-[11px] uppercase text-odoo-text-muted">Фамилия</span>
           <input
-            className="rounded border border-odoo-border px-2 py-1.5 text-sm"
+            aria-invalid={lastNameIsEmail}
+            aria-label="Фамилия"
+            className={`rounded border px-2 py-1.5 text-sm ${
+              lastNameIsEmail ? "border-odoo-danger" : "border-odoo-border"
+            }`}
             placeholder="Петров"
             value={form.last_name}
             onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
@@ -159,7 +172,7 @@ export function UsersPage() {
         </label>
         {editing ? (
           <>
-            <Button onClick={() => update.mutate()} disabled={update.isPending}>
+            <Button onClick={() => update.mutate()} disabled={update.isPending || nameIsEmail}>
               Сохранить
             </Button>
             <Button variant="secondary" onClick={cancelEdit}>
@@ -167,11 +180,15 @@ export function UsersPage() {
             </Button>
           </>
         ) : (
-          <Button onClick={() => create.mutate()} disabled={create.isPending || !form.email}>
+          <Button
+            onClick={() => create.mutate()}
+            disabled={create.isPending || !form.email || nameIsEmail}
+          >
             Создать
           </Button>
         )}
       </div>
+      {nameIsEmail && <p className="mb-3 text-sm text-odoo-danger">{nameHint}</p>}
       {error && <p className="mb-3 text-sm text-odoo-danger">{error}</p>}
       {editing && (
         <p className="mb-2 text-xs text-odoo-text-muted">
