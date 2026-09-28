@@ -60,19 +60,25 @@ ufw --force enable || true
 
 ## Шаг Г. Положить проект на сервер
 
-**Вариант 1 — GitHub** (удобнее). С компьютера, где лежит код:
+**Вариант 1 — GitHub** (удобнее). Сначала узнайте, в какой ветке вы сейчас работаете:
+
+```bash
+git branch --show-current
+```
+
+Дальше везде подставляйте это имя вместо `<ваша-ветка>`. С компьютера, где лежит код:
 
 ```bash
 git add -A
 git commit -m "CRM ready for deploy"
-git push origin arena/01a0d6dd-odoo
+git push origin <ваша-ветка>
 ```
 
 На сервере:
 
 ```bash
 cd /opt
-git clone -b arena/01a0d6dd-odoo https://github.com/Roses1s/odoo.git crm
+git clone -b <ваша-ветка> https://github.com/Roses1s/odoo.git crm
 cd /opt/crm
 ```
 
@@ -165,9 +171,55 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 ## HTTPS (позже, когда будете готовы)
 
-1. Поставить certbot / Caddy на 443.  
-2. В `.env`: `USE_HTTPS=True` и `https://` в CORS/CSRF.  
-3. Перезапустить compose.
+До этого шага сайт уже открывается по **http** — `docker-compose.yml` монтирует
+в nginx `nginx/http.conf`, у которого нет TLS и, значит, нет и зависимости от
+ещё не существующего сертификата. `nginx/https.conf` (второй файл рядом) —
+это тот же конфиг плюс TLS на 443; nginx **отказывается стартовать**, если
+файлы сертификата не лежат на диске, поэтому включать его раньше времени
+нельзя — весь сайт (включая порт 80) перестанет отвечать.
+
+1. Получить сертификат через certbot в режиме webroot — он положит файлы
+   проверки в общий volume `certbot-webroot`, который `http.conf` уже отдаёт
+   по адресу `/.well-known/acme-challenge/`:
+
+   ```bash
+   cd /opt/crm
+   docker run --rm \
+     -v crm_certbot-webroot:/var/www/certbot \
+     -v /etc/letsencrypt:/etc/letsencrypt \
+     certbot/certbot certonly --webroot -w /var/www/certbot \
+     -d crmdetroid.ru -d www.crmdetroid.ru \
+     --email вы@почта.ru --agree-tos --no-eff-email
+   ```
+
+   Имя volume зависит от имени папки проекта (`docker compose` подставляет
+   префикс сам) — если команда не находит volume, уточните его через
+   `docker volume ls | grep certbot-webroot`.
+
+2. Переключить nginx на TLS-конфиг — в `docker-compose.yml` в сервисе `nginx`
+   заменить строку монтирования:
+
+   ```diff
+   -      - ./nginx/http.conf:/etc/nginx/conf.d/default.conf:ro
+   +      - ./nginx/https.conf:/etc/nginx/conf.d/default.conf:ro
+   ```
+
+3. В `.env` выставить `USE_HTTPS=True`, а в `CORS_ALLOWED_ORIGINS` /
+   `CSRF_TRUSTED_ORIGINS` — варианты с `https://` вместо `http://`.
+
+4. Пересобрать/перезапустить:
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build backend nginx
+   ```
+
+5. Проверить: https://crmdetroid.ru/login должен открываться, http:// —
+   редиректить на https (это уже в `nginx/https.conf`).
+
+Продление: сертификаты Let's Encrypt живут 90 дней. Повторяйте команду из
+шага 1 (certbot сам обновит файл на месте) по крону раз в месяц-два, затем
+`docker compose up -d --no-deps --force-recreate nginx`, чтобы nginx перечитал
+обновлённый файл.
 
 ---
 
@@ -176,9 +228,14 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 На сервере от root (после настройки пользователя `deploy`):
 
 ```bash
-sudo -iu deploy /opt/crm/deploy.sh
-sudo -iu deploy /opt/crm/deploy.sh arena/01a0d6dd-odoo
+sudo -iu deploy /opt/crm/deploy.sh                  # перевыкатывает уже развёрнутую ветку
+sudo -iu deploy /opt/crm/deploy.sh <ваша-ветка>     # или явно переключиться на другую
 ```
+
+Без аргумента скрипт берёт ту ветку, которая уже стоит в `/opt/crm` (`git rev-parse
+--abbrev-ref HEAD`) — то есть просто повторяет тот же релиз с учётом новых коммитов.
+Он никогда не откатывает вас на ветку одной из прошлых сессий молча: если ветку не
+удалось определить, скрипт остановится с ошибкой, а не задеплоит что-то произвольное.
 
 Скрипт: fetch + `reset --hard` на ветку, **`.env` сохраняет**, `docker compose up -d --build`, ждёт backend, поднимает nginx.
 

@@ -27,5 +27,5 @@ chmod +x "$APP_DIR/deploy.sh"
 
 echo
 echo "Готово. Дальше выкат:"
-echo "  sudo -iu $DEPLOY_USER $APP_DIR/deploy.sh"
-echo "  sudo -iu $DEPLOY_USER $APP_DIR/deploy.sh arena/01a0d6dd-odoo"
+echo "  sudo -iu $DEPLOY_USER $APP_DIR/deploy.sh                # текущая ветка репозитория"
+echo "  sudo -iu $DEPLOY_USER $APP_DIR/deploy.sh <ваша-ветка>   # явно указать другую"

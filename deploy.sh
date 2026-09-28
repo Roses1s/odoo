@@ -1,12 +1,31 @@
 #!/bin/bash
 # Выкат:  sudo -iu deploy /opt/crm/deploy.sh
-#         sudo -iu deploy /opt/crm/deploy.sh arena/01a0d6dd-odoo
+#         sudo -iu deploy /opt/crm/deploy.sh имя-ветки
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 cd "$ROOT"
 
-BRANCH="${1:-${DEPLOY_BRANCH:-arena/01a0d6dd-odoo}}"
+if [[ ! -d .git ]]; then
+  echo "Нет git-репозитория в $ROOT"
+  exit 1
+fi
+
+# Without an explicit branch this used to fall back to whatever branch was
+# hardcoded here at the time — a name from one specific past session, not a
+# real default. Deploying without an argument redeployed a stale snapshot
+# nobody meant to ship. The only default that stays correct over time is
+# "whatever is already checked out on this server": that's what a bare
+# re-run should reapply.
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+BRANCH="${1:-${DEPLOY_BRANCH:-$CURRENT_BRANCH}}"
+
+if [[ -z "$BRANCH" || "$BRANCH" == "HEAD" ]]; then
+  echo "Не удалось определить ветку для выката." >&2
+  echo "Передайте её явно: $0 <ветка>  (или задайте DEPLOY_BRANCH)." >&2
+  exit 1
+fi
+
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
 
 echo "==> $(whoami) @ $ROOT"
@@ -14,11 +33,6 @@ echo "==> ветка: $BRANCH"
 
 if [[ ! -f .env ]]; then
   echo "Нет $ROOT/.env — секреты не трогаем, файл должен существовать."
-  exit 1
-fi
-
-if [[ ! -d .git ]]; then
-  echo "Нет git-репозитория в $ROOT"
   exit 1
 fi
 
