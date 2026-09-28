@@ -23,6 +23,7 @@ import {
   Notebook,
   OdooInput,
 } from "@/shared/ui/odoo-form";
+import { FilePreview, previewKind } from "@/shared/ui/file-preview";
 import { FormSkeleton } from "@/shared/ui/skeleton";
 
 function results<T>(data: unknown): T[] {
@@ -167,6 +168,13 @@ export function LeadFormPage() {
   const [pristine, setPristine] = useState<FormState>(empty);
   const [error, setError] = useState("");
   const [downloadError, setDownloadError] = useState("");
+  const [preview, setPreview] = useState<{
+    file: Attachment;
+    url?: string;
+    text?: string;
+    loading: boolean;
+    error?: string;
+  } | null>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [tab, setTab] = useState("shipments");
   const loadedId = useRef<number | null>(null);
@@ -329,13 +337,64 @@ export function LeadFormPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lead-attachments", id] }),
   });
 
+  // Blob.text() is missing in older Safari, so fall back to FileReader.
+  function blobToText(blob: Blob): Promise<string> {
+    if (typeof blob.text === "function") return blob.text();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(blob);
+    });
+  }
+
+  async function fetchAttachment(attachment: Attachment): Promise<Blob> {
+    const response = await api.get(`/crm/leads/${id}/attachments/${attachment.id}/download/`, {
+      responseType: "blob",
+    });
+    // Rebuild the blob with the stored content type: the preview relies on it
+    // to decide between an image, a PDF viewer and plain text.
+    return new Blob([response.data as Blob], {
+      type: attachment.content_type || (response.data as Blob).type,
+    });
+  }
+
+  function closePreview() {
+    setPreview((current) => {
+      if (current?.url) URL.revokeObjectURL(current.url);
+      return null;
+    });
+  }
+
+  async function openPreview(attachment: Attachment) {
+    const kind = previewKind(attachment);
+    if (kind === "none") {
+      setPreview({ file: attachment, loading: false });
+      return;
+    }
+    setPreview({ file: attachment, loading: true });
+    try {
+      const blob = await fetchAttachment(attachment);
+      if (kind === "text") {
+        const text = await blobToText(blob);
+        setPreview({ file: attachment, text, loading: false });
+        return;
+      }
+      setPreview({ file: attachment, url: URL.createObjectURL(blob), loading: false });
+    } catch (e) {
+      setPreview({
+        file: attachment,
+        loading: false,
+        error: apiErrorMessage(e, "Не удалось открыть файл"),
+      });
+    }
+  }
+
   async function downloadAttachment(attachment: Attachment) {
     try {
-      const response = await api.get(`/crm/leads/${id}/attachments/${attachment.id}/download/`, {
-        responseType: "blob",
-      });
+      const blob = await fetchAttachment(attachment);
       setDownloadError("");
-      const url = URL.createObjectURL(response.data as Blob);
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = attachment.name;
@@ -792,12 +851,25 @@ export function LeadFormPage() {
                 undefined
               }
               onUpload={(file) => uploadMut.mutate(file)}
+              onPreview={openPreview}
               onDownload={downloadAttachment}
               onDeleteAttachment={(a) => deleteAttachmentMut.mutate(a.id)}
             />
           </div>
         )}
       </div>
+
+      {preview && (
+        <FilePreview
+          file={preview.file}
+          url={preview.url}
+          text={preview.text}
+          loading={preview.loading}
+          error={preview.error}
+          onClose={closePreview}
+          onDownload={() => downloadAttachment(preview.file)}
+        />
+      )}
     </AppShell>
   );
 }

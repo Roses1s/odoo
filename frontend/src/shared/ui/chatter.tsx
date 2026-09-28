@@ -50,6 +50,7 @@ interface ChatterProps {
   uploading?: boolean;
   attachmentError?: string;
   onUpload?: (file: File) => void;
+  onPreview?: (attachment: Attachment) => void;
   onDownload?: (attachment: Attachment) => void;
   onDeleteAttachment?: (attachment: Attachment) => void;
 }
@@ -63,6 +64,7 @@ export function Chatter({
   uploading = false,
   attachmentError,
   onUpload,
+  onPreview,
   onDownload,
   onDeleteAttachment,
 }: ChatterProps) {
@@ -188,8 +190,8 @@ export function Chatter({
                   <Paperclip className="h-3.5 w-3.5 shrink-0 text-odoo-text-light" />
                   <button
                     type="button"
-                    onClick={() => onDownload?.(file)}
-                    title={`${file.name} · ${formatSize(file.size)}`}
+                    onClick={() => (onPreview ?? onDownload)?.(file)}
+                    title={`${file.name} · ${formatSize(file.size)} — открыть просмотр`}
                     className="min-w-0 flex-1 truncate text-left text-odoo-primary hover:underline"
                   >
                     {file.name}
@@ -376,8 +378,8 @@ export function Chatter({
                         <li key={file.id}>
                           <button
                             type="button"
-                            onClick={() => onDownload?.(file)}
-                            title={`${file.name} · ${formatSize(file.size)}`}
+                            onClick={() => (onPreview ?? onDownload)?.(file)}
+                            title={`${file.name} · ${formatSize(file.size)} — открыть просмотр`}
                             className="inline-flex max-w-[240px] items-center gap-1 rounded-[4px] border border-odoo-border bg-white px-1.5 py-0.5 text-[11px] text-odoo-primary transition-colors hover:bg-odoo-bg"
                           >
                             <Paperclip className="h-3 w-3 shrink-0" />
