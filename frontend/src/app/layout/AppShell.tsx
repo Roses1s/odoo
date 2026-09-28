@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ChevronDown, LayoutGrid, List, Search, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Navbar } from "@/app/layout/Navbar";
 
 export function Breadcrumb({ items }: { items: string[] }) {
@@ -25,6 +26,8 @@ export function Toolbar({ children }: { children: ReactNode }) {
 
 export function ControlPanel({
   title = "Лиды",
+  crumbs,
+  status,
   children,
   search,
   onSearch,
@@ -35,7 +38,8 @@ export function ControlPanel({
   count,
 }: {
   title?: string;
-  crumbs?: string[];
+  crumbs?: { label: string; to?: string }[];
+  status?: ReactNode;
   children?: ReactNode;
   search?: string;
   onSearch?: (v: string) => void;
@@ -59,7 +63,31 @@ export function ControlPanel({
             Новый
           </button>
         )}
-        <span className="text-[14px] font-medium leading-none text-odoo-text">{title}</span>
+        {crumbs && crumbs.length > 0 ? (
+          <nav aria-label="Хлебные крошки" className="flex min-w-0 items-center gap-1.5">
+            {crumbs.map((crumb, i) => {
+              const last = i === crumbs.length - 1;
+              return (
+                <span key={`${crumb.label}-${i}`} className="flex min-w-0 items-center gap-1.5">
+                  {i > 0 && <span className="text-odoo-text-light">/</span>}
+                  {crumb.to && !last ? (
+                    <Link
+                      to={crumb.to}
+                      className="truncate text-[13px] text-odoo-text-muted hover:text-odoo-primary"
+                    >
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className="truncate text-[14px] font-medium text-odoo-text">{crumb.label}</span>
+                  )}
+                </span>
+              );
+            })}
+          </nav>
+        ) : (
+          <span className="text-[14px] font-medium leading-none text-odoo-text">{title}</span>
+        )}
+        {status}
         {onSettings && (
           <button
             type="button"
