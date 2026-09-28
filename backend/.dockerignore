@@ -1,0 +1,10 @@
+# Keep local dev/test cruft and secrets out of the build context and image.
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.pgdata
+
+.env
+.env.*
