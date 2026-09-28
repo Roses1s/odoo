@@ -119,10 +119,15 @@ function ListTh({
 export function LeadListView({
   leads,
   loading,
+  error = "",
+  onRetry,
   groupBy,
 }: {
   leads: Lead[];
   loading: boolean;
+  /** Load failure from the parent query — an empty list must not look like "no leads". */
+  error?: string;
+  onRetry?: () => void;
   /** Mirrors the kanban grouping menu: rows are grouped the same way. */
   groupBy?: "stage" | "assigned" | "";
 }) {
@@ -322,17 +327,16 @@ export function LeadListView({
 
   // Flatten groups into pages so "Load more" keeps working with grouping on.
   const pagedGroups: { key: string; title: string; items: Lead[] }[] = [];
-  if (!groupBy) {
-    pagedGroups.push({ key: "", title: "", items: sorted.slice(0, visible) });
-  } else {
-    let budget = visible;
-    for (const g of groups) {
-      if (budget <= 0) break;
-      pagedGroups.push({ ...g, items: g.items.slice(0, budget) });
-      budget -= g.items.length;
-    }
+  let budget = visible;
+  for (const g of groups) {
+    if (budget <= 0) break;
+    pagedGroups.push({ ...g, items: g.items.slice(0, budget) });
+    budget -= g.items.length;
   }
-  const hidden = leads.length - sorted.slice(0, visible).length;
+  // Count only what the paged rendering above actually hid — otherwise with
+  // grouping on the button lies about how many rows remain.
+  const shownCount = pagedGroups.reduce((n, g) => n + g.items.length, 0);
+  const hidden = leads.length - shownCount;
 
   return (
     <div className="h-[calc(100dvh-90px)] min-h-0 overflow-auto overscroll-contain border-t border-odoo-border-light bg-odoo-bg [scrollbar-gutter:stable]">
@@ -371,7 +375,29 @@ export function LeadListView({
           </tbody>
         )}
 
-        {!loading && leads.length === 0 && (
+        {!loading && error && (
+          <tbody>
+            <tr>
+              <td
+                colSpan={LIST_COLUMNS}
+                className="bg-odoo-surface px-4 py-12 text-center text-[13px] text-odoo-danger"
+              >
+                {error}
+                {onRetry && (
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="ml-3 rounded border border-odoo-danger/30 px-2 py-0.5 text-xs font-medium text-odoo-danger hover:bg-red-50"
+                  >
+                    Повторить
+                  </button>
+                )}
+              </td>
+            </tr>
+          </tbody>
+        )}
+
+        {!loading && !error && leads.length === 0 && (
           <tbody>
             <tr>
               <td

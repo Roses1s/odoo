@@ -14,7 +14,9 @@ export PGPASSWORD="${POSTGRES_PASSWORD:-}"
 trap 'rm -f "$BACKUP_DIR/$TMP_FILENAME" "$BACKUP_DIR/$MEDIA_TMP"' EXIT
 
 # Write atomically: an interrupted pg_dump must never look like a valid backup.
+# statement_timeout guards against a hung dump blocking the nightly job forever.
 pg_dump -h "${POSTGRES_HOST:-db}" -U "${POSTGRES_USER:-crm_user}" -d "${POSTGRES_DB:-crm_db}" \
+  --statement-timeout="${BACKUP_STATEMENT_TIMEOUT:-30min}" \
   | gzip > "${BACKUP_DIR}/${TMP_FILENAME}"
 
 gzip -t "${BACKUP_DIR}/${TMP_FILENAME}"

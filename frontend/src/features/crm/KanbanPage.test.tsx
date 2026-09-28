@@ -153,6 +153,55 @@ describe("lead list odoo-style controls", () => {
   });
 });
 
+describe("lead load failure", () => {
+  it("shows an error banner instead of a silent empty board or list", async () => {
+    // The module-level vi.mock above is hoisted and always wins for this
+    // file's imports, so drive the failure through its get mock instead.
+    const client = await import("@/shared/api/client");
+    const get = client.api.get as ReturnType<typeof vi.fn>;
+    const realImpl = get.getMockImplementation();
+    if (!realImpl) throw new Error("api.get mock has no implementation");
+    const failing = (url: string) =>
+      url.startsWith("/crm/leads") ? Promise.reject({ response: { status: 500, data: { detail: "Не удалось загрузить лиды." } } }) : realImpl(url);
+
+    get.mockImplementation(failing);
+    try {
+      for (const entry of ["/crm", "/crm?view=list"]) {
+        // A fresh QueryClient per iteration: the leads query key is identical
+        // across the two renders, so a shared cache would serve the first
+        // render's error state to the second one without calling api.get.
+        const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+        const { unmount } = render(
+          <QueryClientProvider client={qc}>
+            <MemoryRouter initialEntries={[entry]}>
+              <KanbanPage />
+            </MemoryRouter>
+          </QueryClientProvider>,
+        );
+        // In list view the message shows both in the shared error banner and
+        // inside the table body, so assert on the banner (role="alert").
+        await waitFor(() => expect(screen.getAllByRole("alert").length).toBeGreaterThan(0));
+        expect(
+          screen
+            .getAllByRole("alert")
+            .some((el) => /Не удалось загрузить лиды/.test(el.textContent ?? "")),
+        ).toBe(true);
+        // The "no leads" hint must not masquerade as a server error.
+        expect(screen.queryByText(/Нет лидов/)).toBeNull();
+        // Both views render a retry button (banner, and in list view also the
+        // table body), so click the first one rather than asserting uniqueness.
+        fireEvent.click(screen.getAllByRole("button", { name: "Повторить" })[0]);
+        await waitFor(() => expect(screen.getAllByRole("alert").length).toBeGreaterThan(0));
+        unmount();
+        qc.clear();
+        get.mockClear();
+      }
+    } finally {
+      get.mockImplementation(realImpl);
+    }
+  });
+});
+
 describe("kanban column paging", () => {
   it("renders a page of cards and reveals the rest on request", async () => {
     renderAt("/crm");

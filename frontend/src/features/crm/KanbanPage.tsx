@@ -18,7 +18,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
 import { useAuthStore } from "@/features/auth/store";
 import { api } from "@/shared/api/client";
-import { unwrapList } from "@/shared/lib/http";
+import { apiErrorMessage, unwrapList } from "@/shared/lib/http";
 import type { Lead, Stage, Tag } from "@/shared/types";
 import { Column } from "@/features/crm/board/Column";
 import { LeadCard, LeadCardBody } from "@/features/crm/board/LeadCard";
@@ -339,7 +339,23 @@ export function KanbanPage() {
         </div>
       )}
 
-      {view !== "list" && leads.length === 0 && !leadsQ.isLoading && (
+      {leadsQ.isError && (
+        <div
+          role="alert"
+          className="mx-4 mt-3 flex items-center justify-between gap-3 rounded border border-odoo-danger/30 bg-red-50 px-3 py-2 text-sm text-odoo-danger"
+        >
+          <span>{apiErrorMessage(leadsQ.error, "Не удалось загрузить лиды.")}</span>
+          <button
+            type="button"
+            className="shrink-0 rounded border border-odoo-danger/30 px-2 py-0.5 text-xs font-medium hover:bg-red-100"
+            onClick={() => leadsQ.refetch()}
+          >
+            Повторить
+          </button>
+        </div>
+      )}
+
+      {!leadsQ.isError && view !== "list" && leads.length === 0 && !leadsQ.isLoading && (
         <div className="px-4 pt-10 text-center text-sm text-odoo-text-muted">
           Нет лидов. Нажмите <span className="font-medium text-odoo-text">Новый</span> или «+
           Добавить» в колонке.
@@ -350,6 +366,8 @@ export function KanbanPage() {
         <LeadListView
           leads={leads}
           loading={leadsQ.isLoading}
+          error={leadsQ.isError ? apiErrorMessage(leadsQ.error, "Не удалось загрузить лиды.") : ""}
+          onRetry={() => leadsQ.refetch()}
           groupBy={group === "assigned" ? "assigned" : group === "stage" ? "stage" : ""}
         />
       )}
