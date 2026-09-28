@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, FileText, Plus, Settings, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
 import { useAuthStore } from "@/features/auth/store";
@@ -179,6 +179,7 @@ export function LeadFormPage() {
   const [tab, setTab] = useState("shipments");
   const loadedId = useRef<number | null>(null);
   const notebookRef = useRef<HTMLDivElement | null>(null);
+  const attachmentCache = useRef(new Map<number, Promise<Blob>>());
 
   const stagesQ = useQuery({
     queryKey: ["stages"],
@@ -334,7 +335,11 @@ export function LeadFormPage() {
   const deleteAttachmentMut = useMutation({
     mutationFn: (attachmentId: number) =>
       api.delete(`/crm/leads/${id}/attachments/${attachmentId}/`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lead-attachments", id] }),
+    onSuccess: (_data, attachmentId) => {
+      attachmentCache.current.delete(attachmentId);
+      qc.invalidateQueries({ queryKey: ["lead-attachments", id] });
+      qc.invalidateQueries({ queryKey: ["timeline", id] });
+    },
   });
 
   // Blob.text() is missing in older Safari, so fall back to FileReader.
@@ -348,16 +353,29 @@ export function LeadFormPage() {
     });
   }
 
-  async function fetchAttachment(attachment: Attachment): Promise<Blob> {
-    const response = await api.get(`/crm/leads/${id}/attachments/${attachment.id}/download/`, {
-      responseType: "blob",
-    });
-    // Rebuild the blob with the stored content type: the preview relies on it
-    // to decide between an image, a PDF viewer and plain text.
-    return new Blob([response.data as Blob], {
-      type: attachment.content_type || (response.data as Blob).type,
-    });
-  }
+  const fetchAttachment = useCallback(
+    (attachment: Attachment): Promise<Blob> => {
+      const cached = attachmentCache.current.get(attachment.id);
+      if (cached) return cached;
+      const request = api
+        .get(`/crm/leads/${id}/attachments/${attachment.id}/download/`, { responseType: "blob" })
+        // Rebuild the blob with the stored content type: the preview relies on
+        // it to pick between an image, a PDF viewer and plain text.
+        .then(
+          (response) =>
+            new Blob([response.data as Blob], {
+              type: attachment.content_type || (response.data as Blob).type,
+            }),
+        )
+        .catch((e) => {
+          attachmentCache.current.delete(attachment.id);
+          throw e;
+        });
+      attachmentCache.current.set(attachment.id, request);
+      return request;
+    },
+    [id],
+  );
 
   function closePreview() {
     setPreview((current) => {
@@ -852,6 +870,7 @@ export function LeadFormPage() {
               }
               onUpload={(file) => uploadMut.mutate(file)}
               onPreview={openPreview}
+              onLoadAttachment={fetchAttachment}
               onDownload={downloadAttachment}
               onDeleteAttachment={(a) => deleteAttachmentMut.mutate(a.id)}
             />

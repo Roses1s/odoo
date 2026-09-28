@@ -1,8 +1,9 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Download, Paperclip, Search, Trash2, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Attachment, TimelineEntry } from "@/shared/types";
+import { previewKind } from "@/shared/ui/file-preview";
 
 type Mode = "note" | "message" | "activity";
 
@@ -33,12 +34,72 @@ function dayLabel(iso: string): string {
   return format(date, "d MMMM yyyy 'г.'", { locale: ru });
 }
 
+/** Bigger images stay collapsed to a chip so a heavy feed is not downloaded at once. */
+const INLINE_IMAGE_MAX = 5 * 1024 * 1024;
+
 function formatSize(bytes: number): string {
   if (!bytes) return "0 Б";
   const units = ["Б", "КБ", "МБ", "ГБ"];
   const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   const value = bytes / 1024 ** i;
   return `${i === 0 ? value : value.toFixed(1)} ${units[i]}`;
+}
+
+/** Images are behind an authorised endpoint, so they are fetched and shown
+ *  from memory instead of being linked directly. */
+function AttachmentThumb({
+  file,
+  load,
+  onOpen,
+}: {
+  file: Attachment;
+  load: (attachment: Attachment) => Promise<Blob>;
+  onOpen?: () => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let objectUrl = "";
+    let active = true;
+    load(file)
+      .then((blob) => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(blob);
+        setUrl(objectUrl);
+      })
+      .catch(() => active && setFailed(true));
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [file, load]);
+
+  if (failed) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-[4px] border border-odoo-border bg-white px-1.5 py-0.5 text-[11px] text-odoo-text-muted">
+        <Paperclip className="h-3 w-3" />
+        {file.name}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      title={`${file.name} · ${formatSize(file.size)} — открыть полностью`}
+      className="block overflow-hidden rounded-[4px] border border-odoo-border bg-white transition-colors hover:border-odoo-primary"
+    >
+      {url ? (
+        <img src={url} alt={file.name} className="max-h-[220px] max-w-full object-contain" />
+      ) : (
+        <span className="flex h-[120px] w-[160px] animate-pulse items-center justify-center bg-odoo-bg text-[11px] text-odoo-text-light">
+          Загрузка…
+        </span>
+      )}
+    </button>
+  );
 }
 
 interface ChatterProps {
@@ -51,6 +112,8 @@ interface ChatterProps {
   attachmentError?: string;
   onUpload?: (file: File) => void;
   onPreview?: (attachment: Attachment) => void;
+  /** Loads the file content; images use it to render inline thumbnails. */
+  onLoadAttachment?: (attachment: Attachment) => Promise<Blob>;
   onDownload?: (attachment: Attachment) => void;
   onDeleteAttachment?: (attachment: Attachment) => void;
 }
@@ -65,6 +128,7 @@ export function Chatter({
   attachmentError,
   onUpload,
   onPreview,
+  onLoadAttachment,
   onDownload,
   onDeleteAttachment,
 }: ChatterProps) {
@@ -373,8 +437,19 @@ export function Chatter({
                     )
                   )}
                   {entry.attachments && entry.attachments.length > 0 && (
-                    <ul className="mt-1 flex flex-wrap gap-1">
-                      {entry.attachments.map((file) => (
+                    <ul className="mt-1 flex flex-wrap items-start gap-1">
+                      {entry.attachments.map((file) =>
+                        onLoadAttachment &&
+                        previewKind(file) === "image" &&
+                        file.size <= INLINE_IMAGE_MAX ? (
+                          <li key={file.id}>
+                            <AttachmentThumb
+                              file={file}
+                              load={onLoadAttachment}
+                              onOpen={() => (onPreview ?? onDownload)?.(file)}
+                            />
+                          </li>
+                        ) : (
                         <li key={file.id}>
                           <button
                             type="button"
@@ -389,7 +464,8 @@ export function Chatter({
                             </span>
                           </button>
                         </li>
-                      ))}
+                        ),
+                      )}
                     </ul>
                   )}
                 </div>
