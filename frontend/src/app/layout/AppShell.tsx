@@ -57,9 +57,15 @@ export function ControlPanel({
             Новый
           </button>
         )}
-        <span className="text-[15px] font-medium text-odoo-text">{title}</span>
+        <span className="text-[14px] font-medium leading-none text-odoo-text">{title}</span>
         {onSettings && (
-          <button type="button" className="text-odoo-text-muted hover:text-odoo-text" onClick={onSettings} title="Настройки">
+          <button
+            type="button"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-odoo-bg hover:text-odoo-text"
+            onClick={onSettings}
+            title="Настройки"
+            aria-label="Настройки"
+          >
             <Settings className="h-4 w-4" />
           </button>
         )}
@@ -83,10 +89,10 @@ export function ControlPanel({
         )}
         <div className="relative z-10 ml-auto flex items-center gap-1">
           {onView && (
-            <span className="mr-1 inline-flex overflow-hidden rounded border border-odoo-border">
+            <span className="mr-1 inline-flex h-8 overflow-hidden rounded-[3px] border border-odoo-border bg-white">
               <button
                 type="button"
-                className={`px-1.5 py-1 ${view !== "list" ? "bg-odoo-bg text-odoo-primary" : "text-odoo-text-muted"}`}
+                className={`inline-flex w-8 items-center justify-center border-r border-odoo-border transition-colors ${view !== "list" ? "bg-[#e9f2f2] text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
                 onClick={() => onView("kanban")}
                 title="Канбан"
               >
@@ -94,7 +100,7 @@ export function ControlPanel({
               </button>
               <button
                 type="button"
-                className={`px-1.5 py-1 ${view === "list" ? "bg-odoo-bg text-odoo-primary" : "text-odoo-text-muted"}`}
+                className={`inline-flex w-8 items-center justify-center transition-colors ${view === "list" ? "bg-[#e9f2f2] text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
                 onClick={() => onView("list")}
                 title="Список"
               >

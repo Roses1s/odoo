@@ -242,34 +242,41 @@ function QuickCreate({ stageId, onDone }: { stageId: number; onDone: () => void 
   });
   return (
     <form
-      className="m-1 rounded border border-odoo-primary bg-white p-2"
+      className="border-b border-odoo-border-light bg-white px-2.5 py-2"
       onSubmit={(e) => {
         e.preventDefault();
         if (name.trim() && inn.trim()) create.mutate();
       }}
     >
-      <input
-        autoFocus
-        className="mb-1 w-full border-b border-odoo-border-light px-1 py-1 text-sm outline-none"
-        placeholder="Название"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <input
-        className="mb-2 w-full border-b border-odoo-border-light px-1 py-1 text-sm outline-none"
-        placeholder="ИНН"
-        value={inn}
-        onChange={(e) => setInn(e.target.value)}
-      />
-      <div className="flex gap-1">
-        <button type="submit" className="rounded bg-odoo-primary px-2 py-1 text-xs text-white" disabled={create.isPending}>
-          Добавить
+      <div className="border border-[#8fb9b8] bg-white shadow-sm focus-within:ring-1 focus-within:ring-[#8fb9b8]">
+        <input
+          autoFocus
+          className="block h-8 w-full border-b border-odoo-border-light px-2 text-[13px] outline-none placeholder:text-odoo-text-light"
+          placeholder="Название"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <input
+          className="block h-8 w-full px-2 text-[13px] outline-none placeholder:text-odoo-text-light"
+          placeholder="ИНН"
+          inputMode="numeric"
+          value={inn}
+          onChange={(e) => setInn(e.target.value)}
+        />
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="submit"
+          className="rounded-[3px] bg-odoo-primary px-3 py-1 text-[12px] font-medium text-white hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
+          disabled={create.isPending || !name.trim() || !inn.trim()}
+        >
+          {create.isPending ? "Добавление…" : "Добавить"}
         </button>
-        <button type="button" className="px-2 py-1 text-xs text-odoo-text-muted" onClick={onDone}>
+        <button type="button" className="px-1 py-1 text-[12px] text-odoo-text-muted hover:text-odoo-text" onClick={onDone}>
           Отмена
         </button>
       </div>
-      {create.isError && <p className="mt-1 text-[11px] text-odoo-danger">Проверьте ИНН</p>}
+      {create.isError && <p className="mt-1.5 text-[11px] text-odoo-danger">Проверьте ИНН</p>}
     </form>
   );
 }
@@ -350,22 +357,35 @@ function Column({
               </button>
             )}
           </div>
-          <div className="relative flex items-center gap-0.5">
+          <div className="relative flex items-center gap-px">
             <button
               type="button"
-              className="p-0.5 text-odoo-text-muted hover:text-odoo-text"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-[#eeecee] hover:text-odoo-text"
               onClick={() => setQuick(true)}
               title="Добавить лид"
+              aria-label="Добавить лид"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
-            <button type="button" className="p-0.5 text-odoo-text-muted hover:text-odoo-text" onClick={onFold} title="Свернуть">
+            <button
+              type="button"
+              className="inline-flex h-6 w-5 items-center justify-center rounded-sm text-[17px] leading-none text-odoo-text-muted hover:bg-[#eeecee] hover:text-odoo-text"
+              onClick={onFold}
+              title="Свернуть"
+              aria-label="Свернуть этап"
+            >
               ‹
             </button>
             {canManage && (
               <>
-                <button type="button" onClick={() => setMenu((v) => !v)}>
-                  <MoreHorizontal className="h-4 w-4 text-odoo-text-muted" />
+                <button
+                  type="button"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-[#eeecee] hover:text-odoo-text"
+                  onClick={() => setMenu((v) => !v)}
+                  title="Меню этапа"
+                  aria-label="Меню этапа"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
                 </button>
                 {menu && (
                   <div className="absolute right-0 top-6 z-20 min-w-[200px] rounded border border-odoo-border bg-white py-1 shadow-lg">
@@ -429,7 +449,11 @@ function Column({
         {quick ? (
           <QuickCreate stageId={stage.id} onDone={() => setQuick(false)} />
         ) : (
-          <button type="button" className="flex items-center gap-1 px-2.5 py-2 text-[13px] text-odoo-text-muted hover:text-odoo-text" onClick={() => setQuick(true)}>
+          <button
+            type="button"
+            className="flex w-full items-center gap-1 px-2.5 py-2 text-left text-[13px] text-odoo-text-muted hover:bg-[#faf8f9] hover:text-odoo-text"
+            onClick={() => setQuick(true)}
+          >
             <Plus className="h-3.5 w-3.5" /> Добавить
           </button>
         )}
