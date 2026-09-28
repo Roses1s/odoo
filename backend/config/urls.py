@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.utils.crypto import constant_time_compare
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -34,6 +35,10 @@ def health(request):
 
     if request.GET.get("deep") != "1":
         return JsonResponse({"status": "ok", "db": db})
+
+    expected = getattr(settings, "HEALTH_TOKEN", "")
+    if expected and not constant_time_compare(request.GET.get("token", ""), expected):
+        return JsonResponse({"detail": "Недействительный токен"}, status=403)
 
     from datetime import UTC, datetime
     from pathlib import Path

@@ -217,6 +217,11 @@ BACKUP_DIR = env("BACKUP_DIR", default="/backups")
 # How long a lead keeps its revision log; older rows are pruned nightly.
 HISTORY_RETENTION_DAYS = env.int("HISTORY_RETENTION_DAYS", default=365)
 
+# Optional shared secret for /api/health/?deep=1. The probe is meant to be
+# polled by an outside monitor, so it cannot sit behind a login — a token
+# keeps the backup schedule from being public. Empty means no check.
+HEALTH_TOKEN = env("HEALTH_TOKEN", default="")
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
