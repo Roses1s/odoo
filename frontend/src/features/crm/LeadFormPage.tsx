@@ -5,7 +5,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
 import { useAuthStore } from "@/features/auth/store";
 import { api } from "@/shared/api/client";
-import { apiErrorMessage } from "@/shared/lib/http";
+import { apiErrorMessage, unwrapList } from "@/shared/lib/http";
 import { innChecksumOk, normalizeInn } from "@/shared/lib/inn";
 import { ownerInitials, ownerLabel } from "@/shared/lib/owner";
 import type { Attachment, Lead, Stage, Tag, Shipment, TimelineEntry } from "@/shared/types";
@@ -25,12 +25,6 @@ import {
 } from "@/shared/ui/odoo-form";
 import { FilePreview, previewKind } from "@/shared/ui/file-preview";
 import { FormSkeleton } from "@/shared/ui/skeleton";
-
-function results<T>(data: unknown): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && "results" in data) return (data as { results: T[] }).results;
-  return [];
-}
 
 const empty = {
   name: "",
@@ -183,11 +177,11 @@ export function LeadFormPage() {
 
   const stagesQ = useQuery({
     queryKey: ["stages"],
-    queryFn: async () => results<Stage>((await api.get("/crm/stages/")).data),
+    queryFn: async () => unwrapList<Stage>((await api.get("/crm/stages/")).data),
   });
   const tagsQ = useQuery({
     queryKey: ["tags"],
-    queryFn: async () => results<Tag>((await api.get("/crm/tags/")).data),
+    queryFn: async () => unwrapList<Tag>((await api.get("/crm/tags/")).data),
   });
   const leadQ = useQuery({
     queryKey: ["lead", id],
@@ -202,7 +196,7 @@ export function LeadFormPage() {
   const shipsQ = useQuery({
     queryKey: ["lead-shipments", id],
     enabled: !isNew,
-    queryFn: async () => results<Shipment>((await api.get(`/leads/${id}/shipments/`)).data),
+    queryFn: async () => unwrapList<Shipment>((await api.get(`/leads/${id}/shipments/`)).data),
   });
 
   // Record pager ("N / M" with prev/next), like the Odoo control panel.
@@ -212,7 +206,7 @@ export function LeadFormPage() {
     staleTime: 60_000,
     queryFn: async () => {
       const { data } = await api.get("/crm/leads/?page_size=500");
-      const rows = results<Lead>(data);
+      const rows = unwrapList<Lead>(data);
       const total =
         data && typeof data === "object" && "count" in data
           ? Number((data as { count: number }).count)
@@ -318,7 +312,7 @@ export function LeadFormPage() {
     queryKey: ["lead-attachments", id],
     enabled: !isNew,
     queryFn: async () =>
-      results<Attachment>((await api.get(`/crm/leads/${id}/attachments/`)).data),
+      unwrapList<Attachment>((await api.get(`/crm/leads/${id}/attachments/`)).data),
   });
 
   const uploadMut = useMutation({

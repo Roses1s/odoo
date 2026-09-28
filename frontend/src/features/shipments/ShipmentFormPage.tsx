@@ -3,17 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppShell, Breadcrumb, Toolbar } from "@/app/layout/AppShell";
 import { api } from "@/shared/api/client";
+import { unwrapList } from "@/shared/lib/http";
 import type { Lead, Shipment, TimelineEntry } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
 import { Chatter } from "@/shared/ui/chatter";
 import { FormSection } from "@/shared/ui/form-section";
 import { FormSkeleton } from "@/shared/ui/skeleton";
-
-function results<T>(data: unknown): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && "results" in data) return (data as { results: T[] }).results;
-  return [];
-}
 
 interface Carrier {
   id: number;
@@ -59,11 +54,11 @@ export function ShipmentFormPage() {
 
   const leadsQ = useQuery({
     queryKey: ["leads"],
-    queryFn: async () => results<Lead>((await api.get("/crm/leads/?page_size=200")).data),
+    queryFn: async () => unwrapList<Lead>((await api.get("/crm/leads/?page_size=200")).data),
   });
   const carriersQ = useQuery({
     queryKey: ["carriers"],
-    queryFn: async () => results<Carrier>((await api.get("/carriers/")).data),
+    queryFn: async () => unwrapList<Carrier>((await api.get("/carriers/")).data),
   });
   const shipQ = useQuery({
     queryKey: ["shipment", id],

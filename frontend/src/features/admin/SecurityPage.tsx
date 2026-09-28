@@ -1,26 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/shared/api/client";
+import { unwrapList } from "@/shared/lib/http";
 import { Button } from "@/shared/ui/button";
-
-function results<T>(data: unknown): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && "results" in data) return (data as { results: T[] }).results;
-  return [];
-}
 
 export function SecurityPage() {
   const qc = useQueryClient();
   const attempts = useQuery({
     queryKey: ["login-attempts"],
     queryFn: async () =>
-      results<{ id: number; username: string; ip_address: string; attempt_time: string; failures: number }>(
+      unwrapList<{ id: number; username: string; ip_address: string; attempt_time: string; failures: number }>(
         (await api.get("/admin/login-attempts/")).data,
       ),
   });
   const backups = useQuery({
     queryKey: ["backups"],
     queryFn: async () =>
-      results<{ name: string; size: number }>((await api.get("/admin/backups/")).data),
+      unwrapList<{ name: string; size: number }>((await api.get("/admin/backups/")).data),
   });
   const run = useMutation({
     mutationFn: () => api.post("/admin/backup/"),

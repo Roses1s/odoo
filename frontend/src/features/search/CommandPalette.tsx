@@ -2,13 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/shared/api/client";
+import { unwrapList } from "@/shared/lib/http";
 import type { Lead } from "@/shared/types";
-
-function results<T>(data: unknown): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && "results" in data) return (data as { results: T[] }).results;
-  return [];
-}
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -36,7 +31,7 @@ export function CommandPalette() {
   const { data } = useQuery({
     queryKey: ["search", debounced],
     enabled: open && debounced.length > 1,
-    queryFn: async () => results<Lead>((await api.get(`/crm/leads/?search=${encodeURIComponent(debounced)}`)).data),
+    queryFn: async () => unwrapList<Lead>((await api.get(`/crm/leads/?search=${encodeURIComponent(debounced)}`)).data),
   });
 
   if (!open) return null;

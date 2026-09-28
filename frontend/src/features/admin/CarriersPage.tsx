@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "@/shared/api/client";
+import { unwrapList } from "@/shared/lib/http";
 import { Button } from "@/shared/ui/button";
 
 interface Carrier {
@@ -10,19 +11,13 @@ interface Carrier {
   is_active: boolean;
 }
 
-function results<T>(data: unknown): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && "results" in data) return (data as { results: T[] }).results;
-  return [];
-}
-
 export function CarriersPage() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [inn, setInn] = useState("");
   const { data } = useQuery({
     queryKey: ["carriers"],
-    queryFn: async () => results<Carrier>((await api.get("/carriers/")).data),
+    queryFn: async () => unwrapList<Carrier>((await api.get("/carriers/")).data),
   });
   const create = useMutation({
     mutationFn: () => api.post("/carriers/", { name, inn }),

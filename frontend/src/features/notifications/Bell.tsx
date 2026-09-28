@@ -3,6 +3,7 @@ import { Bell } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/shared/api/client";
+import { unwrapList } from "@/shared/lib/http";
 
 interface Notification {
   id: number;
@@ -13,19 +14,13 @@ interface Notification {
   created_at: string;
 }
 
-function results<T>(data: unknown): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && "results" in data) return (data as { results: T[] }).results;
-  return [];
-}
-
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
   const list = useQuery({
     queryKey: ["notifications"],
-    queryFn: async () => results<Notification>((await api.get("/notifications/")).data),
+    queryFn: async () => unwrapList<Notification>((await api.get("/notifications/")).data),
     refetchInterval: 30_000,
   });
   const unread = useQuery({

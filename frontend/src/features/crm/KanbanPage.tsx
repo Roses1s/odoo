@@ -27,10 +27,6 @@ import { ownerInitials, ownerLabel } from "@/shared/lib/owner";
 import type { Lead, Stage, Tag } from "@/shared/types";
 import { KanbanCardSkeleton, ListRowSkeleton } from "@/shared/ui/skeleton";
 
-function results<T>(data: unknown): T[] {
-  return unwrapList<T>(data);
-}
-
 const STAGE_COLORS: Record<string, string> = {
   slate: "#6C757D",
   purple: "#714B67",
@@ -632,11 +628,11 @@ export function KanbanPage() {
 
   const stagesQ = useQuery({
     queryKey: ["stages"],
-    queryFn: async () => results<Stage>((await api.get("/crm/stages/")).data),
+    queryFn: async () => unwrapList<Stage>((await api.get("/crm/stages/")).data),
   });
   const tagsQ = useQuery({
     queryKey: ["tags"],
-    queryFn: async () => results<Tag>((await api.get("/crm/tags/")).data),
+    queryFn: async () => unwrapList<Tag>((await api.get("/crm/tags/")).data),
   });
   const leadsQ = useQuery({
     queryKey: ["leads", priority, search, stageF, tagF, archived],
@@ -652,7 +648,7 @@ export function KanbanPage() {
       let url: string | null = `/crm/leads/?${q}`;
       while (url) {
         const response: { data: { results?: Lead[]; next?: string | null } | Lead[] } = await api.get(url);
-        all.push(...results<Lead>(response.data));
+        all.push(...unwrapList<Lead>(response.data));
         if (Array.isArray(response.data) || !response.data.next) break;
         const next = new URL(response.data.next, window.location.origin);
         url = `${next.pathname.replace(/^\/api/, "")}${next.search}`;

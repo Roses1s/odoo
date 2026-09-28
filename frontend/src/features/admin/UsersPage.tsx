@@ -1,14 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "@/shared/api/client";
+import { unwrapList } from "@/shared/lib/http";
 import type { Role, User } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
-
-function results<T>(data: unknown): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && "results" in data) return (data as { results: T[] }).results;
-  return [];
-}
 
 const ROLE_ORDER: Record<string, number> = { admin: 0, manager: 1, operator: 2 };
 const ROLE_LABEL: Record<string, string> = {
@@ -45,7 +40,7 @@ export function UsersPage() {
 
   const { data } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: async () => results<User>((await api.get("/admin/users/")).data),
+    queryFn: async () => unwrapList<User>((await api.get("/admin/users/")).data),
   });
 
   const create = useMutation({

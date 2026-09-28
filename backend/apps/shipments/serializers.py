@@ -1,11 +1,20 @@
 from rest_framework import serializers
 
 from apps.core.fields import MaskedINNField, MaskedPhoneField
-from apps.core.validators import normalize_phone
+from apps.core.validators import normalize_phone, validate_inn
 from apps.shipments.models import Carrier, Shipment
 
 
 class CarrierSerializer(serializers.ModelSerializer):
+    # Carrier.save() runs full_clean(), and a model-level ValidationError is
+    # raised after DRF has finished validating, which turns a typo into a 500.
+    # Validating here keeps it a normal 400 with a readable message.
+    def validate_inn(self, value: str) -> str:
+        return validate_inn(value)
+
+    def validate_contact_phone(self, value: str) -> str:
+        return normalize_phone(value) if value else value
+
     class Meta:
         model = Carrier
         fields = (

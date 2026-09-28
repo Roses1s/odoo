@@ -2,15 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { AppShell, Breadcrumb, Toolbar } from "@/app/layout/AppShell";
 import { api } from "@/shared/api/client";
+import { unwrapList } from "@/shared/lib/http";
 import type { Shipment } from "@/shared/types";
 import { Button } from "@/shared/ui/button";
 import { TableRowSkeleton } from "@/shared/ui/skeleton";
-
-function results<T>(data: unknown): T[] {
-  if (Array.isArray(data)) return data as T[];
-  if (data && typeof data === "object" && "results" in data) return (data as { results: T[] }).results;
-  return [];
-}
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   new: { label: "Новая", cls: "bg-odoo-tag-yellow-bg text-odoo-tag-yellow-text" },
@@ -27,7 +22,7 @@ export function ShipmentsPage() {
     queryKey: ["shipments", status],
     queryFn: async () => {
       const q = status ? `?status=${status}` : "";
-      return results<Shipment>((await api.get(`/shipments/${q}`)).data);
+      return unwrapList<Shipment>((await api.get(`/shipments/${q}`)).data);
     },
   });
 

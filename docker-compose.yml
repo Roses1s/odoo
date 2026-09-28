@@ -1,3 +1,10 @@
+# Without a size limit the json-file driver grows until the disk is full.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 volumes:
   pgdata:
   backups:
@@ -7,6 +14,7 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-crm_db}
       POSTGRES_USER: ${POSTGRES_USER:-crm_user}
@@ -23,6 +31,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -32,6 +41,7 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
+    logging: *default-logging
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -62,6 +72,7 @@ services:
   celery_worker:
     build: ./backend
     restart: unless-stopped
+    logging: *default-logging
     command: celery -A config worker -l info
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -79,6 +90,7 @@ services:
   celery_beat:
     build: ./backend
     restart: unless-stopped
+    logging: *default-logging
     command: celery -A config beat -l info -s /backups/celerybeat-schedule
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -95,12 +107,14 @@ services:
   frontend:
     build: ./frontend
     restart: unless-stopped
+    logging: *default-logging
     expose:
       - "80"
 
   nginx:
     image: nginx:alpine
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "80:80"
       - "443:443"
