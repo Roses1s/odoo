@@ -182,14 +182,29 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 ---
 
-## HTTPS (позже, когда будете готовы)
+## HTTPS
 
-До этого шага сайт уже открывается по **http** — `docker-compose.yml` монтирует
-в nginx `nginx/http.conf`, у которого нет TLS и, значит, нет и зависимости от
-ещё не существующего сертификата. `nginx/https.conf` (второй файл рядом) —
-это тот же конфиг плюс TLS на 443; nginx **отказывается стартовать**, если
-файлы сертификата не лежат на диске, поэтому включать его раньше времени
-нельзя — весь сайт (включая порт 80) перестанет отвечать.
+`docker-compose.yml` mounts `nginx/https.conf` by default — that's the
+config with TLS on :443, and it's what a server that already has a
+certificate needs on every deploy. It refuses to start at all without a real
+certificate on disk, though, so a **brand-new** server needs a one-time
+bootstrap before it can use it:
+
+0. **Только для нового сервера, где сертификата ещё нет.** Временно
+   переключите nginx на `nginx/http.conf` (без TLS, не требует сертификата)
+   — в `docker-compose.yml`, в сервисе `nginx`:
+
+   ```diff
+   -      - ./nginx/https.conf:/etc/nginx/conf.d/default.conf:ro
+   +      - ./nginx/http.conf:/etc/nginx/conf.d/default.conf:ro
+   ```
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-deps --force-recreate nginx
+   ```
+
+   Если сертификат уже есть (сервер когда-то уже проходил этот шаг) —
+   пропустите этот пункт, ничего не трогайте, конфиг и так `https.conf`.
 
 1. Получить сертификат через certbot в режиме webroot — он положит файлы
    проверки в общий volume `certbot-webroot`, который `http.conf` уже отдаёт
@@ -209,8 +224,9 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
    префикс сам) — если команда не находит volume, уточните его через
    `docker volume ls | grep certbot-webroot`.
 
-2. Переключить nginx на TLS-конфиг — в `docker-compose.yml` в сервисе `nginx`
-   заменить строку монтирования:
+2. Вернуть nginx на TLS-конфиг — отменить правку шага 0 (или, если правили
+   вручную, просто `git checkout docker-compose.yml`, раз `https.conf` и так
+   в git default):
 
    ```diff
    -      - ./nginx/http.conf:/etc/nginx/conf.d/default.conf:ro
@@ -229,10 +245,20 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 5. Проверить: https://crmdetroid.ru/login должен открываться, http:// —
    редиректить на https (это уже в `nginx/https.conf`).
 
+**Важно на будущее:** не оставляйте `http.conf` смонтированным дольше, чем
+на время самого бутстрапа. Если он попадёт в `docker-compose.yml` как
+постоянная правка и её потом случайно задеплоят на уже работающий по HTTPS
+сервер — `deploy.sh`/`git reset --hard` в следующий раз молча выключит
+рабочий HTTPS (это уже реально один раз произошло при обкатке этой самой
+процедуры). `https.conf` — это то, что должно быть закоммичено как дефолт
+всегда, кроме как на те несколько минут, что нужны на выпуск первого
+сертификата.
+
 Продление: сертификаты Let's Encrypt живут 90 дней. Повторяйте команду из
 шага 1 (certbot сам обновит файл на месте) по крону раз в месяц-два, затем
 `docker compose up -d --no-deps --force-recreate nginx`, чтобы nginx перечитал
 обновлённый файл.
+
 
 ---
 

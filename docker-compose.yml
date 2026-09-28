@@ -161,11 +161,18 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      # http.conf needs no certificate and is what a fresh checkout serves —
-      # locally, in CI, and on a brand-new server before certbot has run.
-      # Switch this to nginx/https.conf once a real certificate exists under
-      # /etc/letsencrypt (see DEPLOY.md, "HTTPS"), then recreate this service.
-      - ./nginx/http.conf:/etc/nginx/conf.d/default.conf:ro
+      # https.conf is the default because most deploys of this file are to a
+      # server that already has a certificate (this one flip caused a real
+      # outage the first time it was tried: switching a working prod server's
+      # default to the no-TLS file silently turned off its working HTTPS on
+      # the next routine redeploy). It requires a certificate under
+      # /etc/letsencrypt to even start.
+      #
+      # Only for a brand-new server with no certificate yet: change this one
+      # line to nginx/http.conf, bring nginx up, get the first certificate
+      # (see DEPLOY.md, "HTTPS"), then change it back to https.conf and
+      # recreate nginx again. Never leave http.conf as a lasting default.
+      - ./nginx/https.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - certbot-webroot:/var/www/certbot
     depends_on:
