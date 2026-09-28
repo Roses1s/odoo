@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, Q, Sum
 from rest_framework import status, viewsets
@@ -134,14 +135,42 @@ class LeadViewSet(viewsets.ModelViewSet):
                 }
             )
         stage_names = dict(Stage.objects.values_list("id", "name"))
-        for hist in lead.history.all()[:100]:
+        history = list(lead.history.all()[:100])
+        previous = {hist.history_id: getattr(hist, "prev_record", None) for hist in history}
+
+        owner_ids: set[int] = set()
+        for hist in history:
+            prev = previous.get(hist.history_id)
+            if prev and prev.assigned_to_id != hist.assigned_to_id:
+                owner_ids.update({prev.assigned_to_id, hist.assigned_to_id})
+        owner_ids.discard(None)
+        owner_names: dict[int, str] = {}
+        if owner_ids:
+            user_model = get_user_model()
+            owner_names = {
+                user.id: (f"{user.first_name} {user.last_name}".strip() or user.email)
+                for user in user_model.objects.filter(id__in=owner_ids)
+            }
+
+        for hist in history:
             body = "Запись создана" if hist.history_type == "+" else "Изменение лида"
+            field_label = ""
+            old_value = ""
+            new_value = ""
             if hist.history_type == "~":
-                prev = getattr(hist, "prev_record", None)
+                prev = previous.get(hist.history_id)
                 if prev and prev.stage_id != hist.stage_id:
-                    a = stage_names.get(prev.stage_id, str(prev.stage_id))
-                    b = stage_names.get(hist.stage_id, str(hist.stage_id))
-                    body = f"Сменил этап: {a} → {b}"
+                    field_label = "Этапы лидов"
+                    old_value = stage_names.get(prev.stage_id, "")
+                    new_value = stage_names.get(hist.stage_id, "")
+                    body = f"Сменил этап: {old_value} → {new_value}"
+                elif prev and prev.assigned_to_id != hist.assigned_to_id:
+                    field_label = "Продавец"
+                    old_value = owner_names.get(prev.assigned_to_id, "")
+                    new_value = owner_names.get(hist.assigned_to_id, "")
+                    was = old_value or "—"
+                    now = new_value or "—"
+                    body = f"Сменил продавца: {was} → {now}"
             user = hist.history_user
             name = ""
             initials = "SY"
@@ -155,6 +184,9 @@ class LeadViewSet(viewsets.ModelViewSet):
                     "author_name": name or "Система",
                     "author_initials": initials,
                     "body": body,
+                    "field_label": field_label,
+                    "old_value": old_value,
+                    "new_value": new_value,
                     "created_at": hist.history_date,
                 }
             )

@@ -1,5 +1,5 @@
 import { CloudUpload, Undo2 } from "lucide-react";
-import type { InputHTMLAttributes, ReactNode } from "react";
+import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 
 /**
  * Odoo 17 form primitives.
@@ -39,58 +39,144 @@ export function FormAlert({ tone = "danger", children }: { tone?: "danger" | "wa
   );
 }
 
-/** .o_form_statusbar — white strip on top of the sheet, arrows aligned right. */
+function arrowClip(shape: "start" | "middle" | "end", inset = 0) {
+  const tip = ARROW_WIDTH;
+  const i = inset;
+  if (shape === "start") {
+    return `polygon(${i}px ${i}px, calc(100% - ${tip}px) ${i}px, calc(100% - ${i}px) 50%, calc(100% - ${tip}px) calc(100% - ${i}px), ${i}px calc(100% - ${i}px))`;
+  }
+  if (shape === "end") {
+    return `polygon(${i}px ${i}px, calc(100% - ${i}px) ${i}px, calc(100% - ${i}px) calc(100% - ${i}px), ${i}px calc(100% - ${i}px), ${tip + i}px 50%)`;
+  }
+  return `polygon(${i}px ${i}px, calc(100% - ${tip}px) ${i}px, calc(100% - ${i}px) 50%, calc(100% - ${tip}px) calc(100% - ${i}px), ${i}px calc(100% - ${i}px), ${tip + i}px 50%)`;
+}
+
+/**
+ * o_field_statusbar — outlined arrow buttons aligned right, the current stage
+ * outlined with the action colour. Stages that do not fit collapse into "…".
+ */
 export function FormStatusbar({
   items,
   current,
   onSelect,
   disabled = false,
   left,
+  visibleCount = 5,
 }: {
   items: { id: number; name: string }[];
   current?: number;
   onSelect: (id: number) => void;
   disabled?: boolean;
   left?: ReactNode;
+  visibleCount?: number;
 }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  let visible = items.slice(0, visibleCount);
+  let hidden = items.slice(visibleCount);
+  const currentHidden = hidden.find((s) => s.id === current);
+  if (currentHidden && visible.length > 0) {
+    // Odoo always keeps the current stage visible.
+    const dropped = visible[visible.length - 1];
+    visible = [...visible.slice(0, -1), currentHidden];
+    hidden = hidden.filter((s) => s.id !== currentHidden.id).concat(dropped);
+    hidden.sort((a, b) => items.indexOf(a) - items.indexOf(b));
+  }
+
   return (
-    <div className="-mx-4 mb-4 flex min-h-[33px] flex-wrap items-center justify-between gap-2 border-b border-odoo-border px-4 pb-2 lg:-mx-6 lg:-mt-2 lg:px-6">
+    <div className="-mx-4 -mt-4 mb-4 flex min-h-[41px] flex-wrap items-center justify-between gap-2 border-b border-odoo-border px-4 py-1 lg:-mx-6 lg:-mt-6 lg:px-6">
       <div className="flex flex-wrap items-center gap-1">{left}</div>
-      <div className="flex min-w-0 flex-wrap items-stretch justify-end">
-        {items.map((item, i) => {
+      <div className="relative flex min-w-0 flex-wrap items-stretch justify-end">
+        {visible.map((item, i) => {
           const isFirst = i === 0;
-          const isLast = i === items.length - 1;
+          const isLast = i === visible.length - 1 && hidden.length === 0;
+          const shape = isFirst ? "start" : isLast ? "end" : "middle";
           const active = item.id === current;
-          const clip = isFirst
-            ? `polygon(0 0, calc(100% - ${ARROW_WIDTH}px) 0, 100% 50%, calc(100% - ${ARROW_WIDTH}px) 100%, 0 100%)`
-            : isLast
-              ? `polygon(0 0, 100% 0, 100% 100%, 0 100%, ${ARROW_WIDTH}px 50%)`
-              : `polygon(0 0, calc(100% - ${ARROW_WIDTH}px) 0, 100% 50%, calc(100% - ${ARROW_WIDTH}px) 100%, 0 100%, ${ARROW_WIDTH}px 50%)`;
+          const single = visible.length === 1 && hidden.length === 0;
           return (
-            <button
+            <span
               key={item.id}
-              type="button"
-              disabled={disabled}
-              aria-current={active ? "step" : undefined}
-              onClick={() => onSelect(item.id)}
-              title={item.name}
               style={{
                 height: STATUSBAR_HEIGHT,
-                clipPath: items.length > 1 ? clip : undefined,
+                clipPath: single ? undefined : arrowClip(shape),
                 marginLeft: isFirst ? 0 : -(ARROW_WIDTH - 2),
+                backgroundColor: active ? "#00A09D" : "#DEE2E6",
               }}
-              className={`max-w-[200px] truncate text-[13px] font-bold transition-colors disabled:cursor-wait ${
-                isFirst ? "pl-4" : "pl-5"
-              } ${isLast ? "pr-4" : "pr-4"} ${
-                active
-                  ? "bg-[#ddd6dd] text-odoo-text"
-                  : "bg-odoo-border text-[#343a40] hover:bg-[#ced4da]"
-              }`}
+              className="relative inline-flex"
             >
-              {item.name}
-            </button>
+              <button
+                type="button"
+                disabled={disabled}
+                aria-current={active ? "step" : undefined}
+                onClick={() => onSelect(item.id)}
+                title={item.name}
+                style={{ clipPath: single ? undefined : arrowClip(shape, 1) }}
+                className={`max-w-[200px] truncate bg-white text-[13px] transition-colors disabled:cursor-wait ${
+                  isFirst ? "pl-4" : "pl-5"
+                } pr-4 ${
+                  active
+                    ? "font-semibold text-odoo-text"
+                    : "font-medium text-[#495057] hover:bg-odoo-bg"
+                }`}
+              >
+                {item.name}
+              </button>
+            </span>
           );
         })}
+
+        {hidden.length > 0 && (
+          <>
+            <span
+              style={{
+                height: STATUSBAR_HEIGHT,
+                clipPath: arrowClip("end"),
+                marginLeft: -(ARROW_WIDTH - 2),
+                backgroundColor: "#DEE2E6",
+              }}
+              className="relative inline-flex"
+            >
+              <button
+                type="button"
+                disabled={disabled}
+                title="Другие этапы"
+                aria-label="Другие этапы"
+                onClick={() => setMoreOpen((v) => !v)}
+                style={{ clipPath: arrowClip("end", 1) }}
+                className="bg-white pl-5 pr-4 text-[13px] font-medium text-[#495057] transition-colors hover:bg-odoo-bg"
+              >
+                …
+              </button>
+            </span>
+            {moreOpen && (
+              <>
+                <button
+                  type="button"
+                  className="fixed inset-0 z-10"
+                  aria-label="Закрыть"
+                  onClick={() => setMoreOpen(false)}
+                />
+                <div className="absolute right-0 top-[38px] z-50 max-h-[260px] min-w-[220px] overflow-auto rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg">
+                  {hidden.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`block w-full px-3 py-1.5 text-left text-[13px] hover:bg-odoo-bg ${
+                        item.id === current ? "font-semibold text-odoo-text" : "text-odoo-text"
+                      }`}
+                      onClick={() => {
+                        setMoreOpen(false);
+                        onSelect(item.id);
+                      }}
+                    >
+                      {item.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -101,18 +187,27 @@ export function FormGroup({ children }: { children: ReactNode }) {
   return <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2">{children}</div>;
 }
 
-/** .o_inner_group — grid: fit-content(150px) label + flexible value. */
+/** Record title band (full sheet width, as on the reference lead form). */
+export function FormTitle({ children }: { children: ReactNode }) {
+  return (
+    <div className="mb-4 rounded-[2px] bg-[#fdeff1] px-3 py-1.5">
+      <h1 className="text-[24px] font-normal leading-[34px] text-odoo-text">{children}</h1>
+    </div>
+  );
+}
+
+/** .o_inner_group — fixed label column, values aligned across the column. */
 export function InnerGroup({ title, children }: { title?: string; children: ReactNode }) {
   return (
-    <div className="mb-2">
+    <div className="mb-7">
       {title && (
-        <h3 className="mb-2 pb-0.5 text-[13px] font-bold text-odoo-text shadow-[0_1px_0_#e9ecef]">
+        <h3 className="mb-3 text-[12px] font-bold uppercase leading-[16px] tracking-[0.02em] text-odoo-text">
           {title}
         </h3>
       )}
       <div
-        className="grid items-start gap-x-4 gap-y-2"
-        style={{ gridTemplateColumns: "fit-content(150px) minmax(0, 1fr)" }}
+        className="grid items-start gap-x-3 gap-y-[10px]"
+        style={{ gridTemplateColumns: "140px minmax(0, 1fr)" }}
       >
         {children}
       </div>
@@ -124,11 +219,13 @@ export function InnerGroup({ title, children }: { title?: string; children: Reac
 export function Field({
   label,
   htmlFor,
+  help,
   children,
   muted = false,
 }: {
   label: string;
   htmlFor?: string;
+  help?: string;
   children: ReactNode;
   muted?: boolean;
 }) {
@@ -136,11 +233,20 @@ export function Field({
     <>
       <label
         htmlFor={htmlFor}
-        className={`whitespace-nowrap pt-[3px] text-[13px] font-normal leading-[19px] text-odoo-text ${
+        className={`pr-2 pt-[3px] text-[13px] font-normal leading-[19px] text-odoo-text ${
           muted ? "opacity-[0.66]" : ""
         }`}
       >
         {label}
+        {help && (
+          <sup
+            title={help}
+            aria-hidden="true"
+            className="ml-0.5 cursor-help text-[10px] text-odoo-text-light"
+          >
+            ?
+          </sup>
+        )}
       </label>
       <div className="min-w-0 text-[13px] leading-[19px] text-odoo-text">{children}</div>
     </>

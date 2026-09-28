@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Plus, Settings, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
@@ -17,6 +17,7 @@ import {
   FormSheetBg,
   FormStatusIndicator,
   FormStatusbar,
+  FormTitle,
   InnerGroup,
   Notebook,
   OdooInput,
@@ -59,6 +60,92 @@ function normalized(state: FormState) {
   return JSON.stringify({ ...state, tag_ids: [...state.tag_ids].sort((a, b) => a - b) });
 }
 
+function initials(email?: string | null) {
+  if (!email) return "—";
+  return email.split("@")[0].slice(0, 2).toUpperCase();
+}
+
+const TAG_STYLES: Record<string, string> = {
+  blue: "bg-odoo-tag-blue-bg text-odoo-tag-blue-text",
+  green: "bg-odoo-tag-green-bg text-odoo-tag-green-text",
+  red: "bg-odoo-tag-red-bg text-odoo-tag-red-text",
+  yellow: "bg-odoo-tag-yellow-bg text-odoo-tag-yellow-text",
+  purple: "bg-odoo-tag-purple-bg text-odoo-tag-purple-text",
+  orange: "bg-odoo-tag-orange-bg text-odoo-tag-orange-text",
+};
+
+/** many2many_tags widget: selected tags as removable pills + an add dropdown. */
+function TagsField({
+  all,
+  value,
+  onChange,
+}: {
+  all: Tag[];
+  value: number[];
+  onChange: (ids: number[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = all.filter((t) => value.includes(t.id));
+  const rest = all.filter((t) => !value.includes(t.id));
+
+  if (all.length === 0) return <span className="text-odoo-text-light">Теги не настроены</span>;
+
+  return (
+    <div className="relative flex flex-wrap items-center gap-1">
+      {selected.map((tag) => (
+        <span
+          key={tag.id}
+          className={`inline-flex max-w-[220px] items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-[16px] ${
+            TAG_STYLES[tag.color] ?? "bg-[#eeeaea] text-[#6f666a]"
+          }`}
+        >
+          <span className="truncate" title={tag.name}>
+            {tag.name}
+          </span>
+          <button
+            type="button"
+            aria-label={`Убрать тег ${tag.name}`}
+            className="opacity-60 transition-opacity hover:opacity-100"
+            onClick={() => onChange(value.filter((x) => x !== tag.id))}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ))}
+      {rest.length > 0 && (
+        <button
+          type="button"
+          aria-label="Добавить тег"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full text-odoo-text-light transition-colors hover:bg-odoo-bg hover:text-odoo-text"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      )}
+      {open && (
+        <>
+          <button type="button" className="fixed inset-0 z-10" aria-label="Закрыть" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-7 z-50 max-h-[220px] min-w-[200px] overflow-auto rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg">
+            {rest.map((tag) => (
+              <button
+                key={tag.id}
+                type="button"
+                className="block w-full px-3 py-1 text-left text-[13px] text-odoo-text hover:bg-odoo-bg"
+                onClick={() => {
+                  onChange([...value, tag.id]);
+                  setOpen(false);
+                }}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function LeadFormPage() {
   const { id } = useParams();
   const isNew = id === "new" || !id;
@@ -72,6 +159,7 @@ export function LeadFormPage() {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [tab, setTab] = useState("shipments");
   const loadedId = useRef<number | null>(null);
+  const notebookRef = useRef<HTMLDivElement | null>(null);
 
   const stagesQ = useQuery({
     queryKey: ["stages"],
@@ -96,6 +184,25 @@ export function LeadFormPage() {
     enabled: !isNew,
     queryFn: async () => results<Shipment>((await api.get(`/leads/${id}/shipments/`)).data),
   });
+
+  // Record pager ("N / M" with prev/next), like the Odoo control panel.
+  const pagerQ = useQuery({
+    queryKey: ["leads-pager"],
+    enabled: !isNew,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await api.get("/crm/leads/?page_size=500");
+      const rows = results<Lead>(data);
+      const total =
+        data && typeof data === "object" && "count" in data
+          ? Number((data as { count: number }).count)
+          : rows.length;
+      return { ids: rows.map((l) => l.id), total };
+    },
+  });
+  const pagerIds = pagerQ.data?.ids ?? [];
+  const pagerTotal = pagerQ.data?.total ?? pagerIds.length;
+  const pagerIndex = pagerIds.indexOf(Number(id));
 
   // Load the record once: never overwrite unsaved edits on background refetches.
   useEffect(() => {
@@ -199,6 +306,15 @@ export function LeadFormPage() {
   const stages = stagesQ.data ?? [];
   const shipments = shipsQ.data ?? [];
   const loading = leadQ.isLoading && !isNew;
+  const owner = leadQ.data?.assigned_to_name || leadQ.data?.assigned_to_email || "";
+  const ownerInitials = leadQ.data?.assigned_to_name
+    ? leadQ.data.assigned_to_name
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((p) => p[0])
+        .join("")
+        .toUpperCase()
+    : initials(leadQ.data?.assigned_to_email);
 
   const notebookTabs = useMemo(
     () => [
@@ -263,6 +379,7 @@ export function LeadFormPage() {
   return (
     <AppShell>
       <ControlPanel
+        onNew={() => navigate("/crm/leads/new")}
         crumbs={[{ label: "Лиды", to: "/crm" }, { label: form.name || "Новый лид" }]}
         status={
           <FormStatusIndicator
@@ -272,44 +389,89 @@ export function LeadFormPage() {
             onDiscard={discard}
           />
         }
-      >
-        {!isNew && canManage && (
-          <div className="relative z-10 ml-auto flex items-center">
-            <button
-              type="button"
-              className="inline-flex h-7 items-center gap-1 rounded-sm px-2 text-[13px] text-odoo-text-muted hover:bg-odoo-bg hover:text-odoo-text"
-              onClick={() => setActionsOpen((v) => !v)}
-            >
-              <Settings className="h-4 w-4" />
-              Действия
-              <ChevronDown className="h-3.5 w-3.5" />
-            </button>
-            {actionsOpen && (
-              <>
-                <button
-                  type="button"
-                  className="fixed inset-0 z-10"
-                  aria-label="Закрыть"
-                  onClick={() => setActionsOpen(false)}
-                />
-                <div className="absolute right-0 top-8 z-50 min-w-[180px] rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg">
+        cog={
+          !isNew && canManage ? (
+            <span className="relative inline-flex">
+              <button
+                type="button"
+                aria-label="Действия"
+                title="Действия"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-odoo-text-muted transition-colors hover:bg-odoo-bg hover:text-odoo-text"
+                onClick={() => setActionsOpen((v) => !v)}
+              >
+                <Settings className="h-3.5 w-3.5" />
+              </button>
+              {actionsOpen && (
+                <>
                   <button
                     type="button"
-                    disabled={archive.isPending}
-                    className="block w-full px-3 py-1.5 text-left text-[13px] text-odoo-text hover:bg-odoo-bg disabled:opacity-60"
-                    onClick={() => {
-                      setActionsOpen(false);
-                      if (window.confirm(`Архивировать лид «${form.name}»?`)) archive.mutate();
-                    }}
-                  >
-                    Архивировать
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </ControlPanel>
+                    className="fixed inset-0 z-10"
+                    aria-label="Закрыть"
+                    onClick={() => setActionsOpen(false)}
+                  />
+                  <div className="absolute left-0 top-6 z-50 min-w-[180px] rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg">
+                    <button
+                      type="button"
+                      disabled={archive.isPending}
+                      className="block w-full px-3 py-1.5 text-left text-[13px] text-odoo-text hover:bg-odoo-bg disabled:opacity-60"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        if (window.confirm(`Архивировать лид «${form.name}»?`)) archive.mutate();
+                      }}
+                    >
+                      Архивировать
+                    </button>
+                  </div>
+                </>
+              )}
+            </span>
+          ) : null
+        }
+        stats={
+          !isNew ? (
+            <button
+              type="button"
+              onClick={() => notebookRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+              className="inline-flex h-[34px] items-center gap-2 rounded-[4px] border border-odoo-border bg-white px-2.5 transition-colors hover:bg-odoo-bg"
+            >
+              <FileText className="h-4 w-4 text-odoo-text-muted" />
+              <span className="flex flex-col items-start leading-[13px]">
+                <span className="text-[12px] text-odoo-text">Все заявки</span>
+                <span className="text-[11px] text-odoo-text-muted">{shipments.length}</span>
+              </span>
+            </button>
+          ) : null
+        }
+        pager={
+          !isNew && pagerIndex >= 0 ? (
+            <span className="mr-1 flex items-center gap-1">
+              <span className="whitespace-nowrap text-[13px] text-odoo-text-muted [font-variant-numeric:tabular-nums]">
+                {pagerIndex + 1} / {pagerTotal}
+              </span>
+              <span className="inline-flex h-7 overflow-hidden rounded-[4px] border border-odoo-border bg-white">
+                <button
+                  type="button"
+                  aria-label="Предыдущий лид"
+                  disabled={pagerIndex <= 0}
+                  onClick={() => navigate(`/crm/leads/${pagerIds[pagerIndex - 1]}`)}
+                  className="inline-flex w-7 items-center justify-center text-odoo-text-muted transition-colors hover:bg-odoo-bg disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Следующий лид"
+                  disabled={pagerIndex >= pagerIds.length - 1}
+                  onClick={() => navigate(`/crm/leads/${pagerIds[pagerIndex + 1]}`)}
+                  className="inline-flex w-7 items-center justify-center border-l border-odoo-border text-odoo-text-muted transition-colors hover:bg-odoo-bg disabled:opacity-40"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </span>
+            </span>
+          ) : null
+        }
+      />
 
       <div className="flex min-h-0 flex-col lg:h-[calc(100dvh-90px)] lg:flex-row">
         <div className="min-w-0 flex-1 lg:overflow-y-auto">
@@ -338,110 +500,117 @@ export function LeadFormPage() {
                 <FormSkeleton />
               ) : (
                 <>
-                  <div className="mb-4 sm:max-w-[75%]">
-                    <h1 className="min-h-[55px] text-[26px] font-medium leading-[34px] text-odoo-text">
-                      <OdooInput
-                        aria-label="Название компании"
-                        placeholder="например, ООО «Ромашка»"
-                        className="!px-1 !text-[26px] !leading-[34px]"
-                        value={form.name}
-                        onChange={(e) => set("name", e.target.value)}
-                      />
-                    </h1>
-                  </div>
+                  <FormTitle>
+                    <OdooInput
+                      aria-label="Название компании"
+                      placeholder="например, ООО «Ромашка»"
+                      className="!px-1 !text-[24px] !leading-[34px]"
+                      value={form.name}
+                      onChange={(e) => set("name", e.target.value)}
+                    />
+                  </FormTitle>
 
                   <FormGroup>
-                    <InnerGroup title="Клиент">
-                      <Field label="ИНН" htmlFor="lead-inn">
-                        <OdooInput
-                          id="lead-inn"
-                          inputMode="numeric"
-                          placeholder="10 или 12 цифр"
-                          value={form.inn}
-                          onChange={(e) => set("inn", e.target.value)}
-                        />
-                      </Field>
-                      <Field label="Контакт логиста" htmlFor="lead-contact">
-                        <OdooInput
-                          id="lead-contact"
-                          placeholder="Фамилия Имя"
-                          value={form.logist_contact}
-                          onChange={(e) => set("logist_contact", e.target.value)}
-                        />
-                      </Field>
-                      <Field label="Email логиста" htmlFor="lead-email">
-                        <OdooInput
-                          id="lead-email"
-                          type="email"
-                          placeholder="name@example.ru"
-                          value={form.logist_email}
-                          onChange={(e) => set("logist_email", e.target.value)}
-                        />
-                      </Field>
-                    </InnerGroup>
-
-                    <InnerGroup title="Сделка">
-                      <Field label="Ожидаемая выручка" htmlFor="lead-revenue">
-                        <span className="flex items-baseline gap-1">
+                    <div>
+                      <InnerGroup title="Реквизиты">
+                        <Field
+                          label="ИНН"
+                          htmlFor="lead-inn"
+                          help="10 или 12 цифр, проверяется контрольная сумма ФНС"
+                        >
                           <OdooInput
-                            id="lead-revenue"
-                            type="number"
-                            className="max-w-[13ch]"
-                            value={form.expected_revenue}
-                            onChange={(e) => set("expected_revenue", e.target.value)}
+                            id="lead-inn"
+                            inputMode="numeric"
+                            placeholder="10 или 12 цифр"
+                            value={form.inn}
+                            onChange={(e) => set("inn", e.target.value)}
                           />
-                          <span className="text-odoo-text-muted">₽</span>
-                        </span>
-                      </Field>
-                      <Field label="Приоритет">
-                        <span className="inline-flex items-center pt-[2px] text-[15px] leading-none text-odoo-warning">
-                          {[1, 2, 3].map((n) => (
-                            <button
-                              key={n}
-                              type="button"
-                              className="px-px"
-                              aria-label={`Приоритет ${n}`}
-                              onClick={() => set("priority", form.priority === n ? 0 : n)}
-                            >
-                              {form.priority >= n ? "★" : "☆"}
-                            </button>
-                          ))}
-                        </span>
-                      </Field>
-                      <Field label="Теги">
-                        <div className="flex flex-wrap gap-1 pt-[2px]">
-                          {(tagsQ.data ?? []).map((t) => {
-                            const on = form.tag_ids.includes(t.id);
-                            return (
-                              <button
-                                key={t.id}
-                                type="button"
-                                aria-pressed={on}
-                                onClick={() =>
-                                  set(
-                                    "tag_ids",
-                                    on ? form.tag_ids.filter((x) => x !== t.id) : [...form.tag_ids, t.id],
-                                  )
-                                }
-                                className={`rounded-full px-2 py-0.5 text-[11px] leading-[16px] transition-colors ${
-                                  on
-                                    ? "bg-[#e6dce4] text-odoo-primary"
-                                    : "bg-[#eeeaea] text-[#6f666a] hover:bg-odoo-border"
-                                }`}
-                              >
-                                {t.name}
-                              </button>
-                            );
-                          })}
-                          {(tagsQ.data ?? []).length === 0 && (
-                            <span className="text-odoo-text-light">Теги не настроены</span>
+                        </Field>
+                        <Field label="Продавец">
+                          {owner ? (
+                            <span className="flex items-center gap-1.5 pt-[2px]">
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-odoo-primary text-[9px] font-semibold text-white">
+                                {ownerInitials}
+                              </span>
+                              <span className="truncate" title={leadQ.data?.assigned_to_email || owner}>
+                                {owner}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="pt-[2px] text-odoo-text-light">Не назначен</span>
                           )}
-                        </div>
-                      </Field>
-                    </InnerGroup>
+                        </Field>
+                      </InnerGroup>
+
+                      <InnerGroup>
+                        <Field label="Ожидаемая выручка" htmlFor="lead-revenue">
+                          <span className="flex items-baseline gap-1">
+                            <OdooInput
+                              id="lead-revenue"
+                              type="number"
+                              className="max-w-[13ch]"
+                              value={form.expected_revenue}
+                              onChange={(e) => set("expected_revenue", e.target.value)}
+                            />
+                            <span className="text-odoo-text-muted">₽</span>
+                          </span>
+                        </Field>
+                      </InnerGroup>
+                    </div>
+
+                    <div>
+                      <InnerGroup>
+                        <Field label="Приоритет">
+                          <span className="inline-flex items-center pt-[2px] text-[16px] leading-none text-odoo-warning">
+                            {[1, 2, 3].map((n) => (
+                              <button
+                                key={n}
+                                type="button"
+                                className="px-px"
+                                aria-label={`Приоритет ${n}`}
+                                onClick={() => set("priority", form.priority === n ? 0 : n)}
+                              >
+                                {form.priority >= n ? "★" : "☆"}
+                              </button>
+                            ))}
+                          </span>
+                        </Field>
+                        <Field label="Теги" help="Метки для фильтрации лидов в списке и канбане">
+                          <TagsField
+                            all={tagsQ.data ?? []}
+                            value={form.tag_ids}
+                            onChange={(ids) => set("tag_ids", ids)}
+                          />
+                        </Field>
+                      </InnerGroup>
+
+                      <InnerGroup title="Информация о клиенте">
+                        <Field label="Контакт логиста/ЛПР" htmlFor="lead-contact">
+                          <OdooInput
+                            id="lead-contact"
+                            placeholder="Фамилия Имя"
+                            value={form.logist_contact}
+                            onChange={(e) => set("logist_contact", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Email логиста" htmlFor="lead-email">
+                          <OdooInput
+                            id="lead-email"
+                            type="email"
+                            placeholder="name@example.ru"
+                            value={form.logist_email}
+                            onChange={(e) => set("logist_email", e.target.value)}
+                          />
+                        </Field>
+                      </InnerGroup>
+                    </div>
                   </FormGroup>
 
-                  {!isNew && <Notebook tabs={notebookTabs} active={tab} onSelect={setTab} />}
+                  {!isNew && (
+                    <div ref={notebookRef}>
+                      <Notebook tabs={notebookTabs} active={tab} onSelect={setTab} />
+                    </div>
+                  )}
                 </>
               )}
             </FormSheet>

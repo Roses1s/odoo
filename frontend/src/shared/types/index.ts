@@ -48,6 +48,7 @@ export interface Lead {
   tags: Tag[];
   assigned_to: number | null;
   assigned_to_email?: string;
+  assigned_to_name?: string;
   is_archived: boolean;
 }
 
@@ -57,6 +58,10 @@ export interface TimelineEntry {
   author_name: string;
   author_initials: string;
   body: string;
+  /** Tracked field label, e.g. "Этапы лидов" (history entries only). */
+  field_label?: string;
+  old_value?: string;
+  new_value?: string;
   created_at: string;
 }
 

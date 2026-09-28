@@ -28,6 +28,10 @@ export function ControlPanel({
   title = "Лиды",
   crumbs,
   status,
+  cog,
+  stats,
+  pager,
+  onNew,
   children,
   search,
   onSearch,
@@ -40,6 +44,10 @@ export function ControlPanel({
   title?: string;
   crumbs?: { label: string; to?: string }[];
   status?: ReactNode;
+  cog?: ReactNode;
+  stats?: ReactNode;
+  pager?: ReactNode;
+  onNew?: () => void;
   children?: ReactNode;
   search?: string;
   onSearch?: (v: string) => void;
@@ -63,31 +71,49 @@ export function ControlPanel({
             Новый
           </button>
         )}
+        {onNew && (
+          <button
+            type="button"
+            onClick={onNew}
+            className="inline-flex h-7 shrink-0 items-center rounded-[4px] border border-odoo-border bg-white px-3 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg"
+          >
+            Новый
+          </button>
+        )}
         {crumbs && crumbs.length > 0 ? (
-          <nav aria-label="Хлебные крошки" className="flex min-w-0 items-center gap-1.5">
-            {crumbs.map((crumb, i) => {
-              const last = i === crumbs.length - 1;
-              return (
-                <span key={`${crumb.label}-${i}`} className="flex min-w-0 items-center gap-1.5">
-                  {i > 0 && <span className="text-odoo-text-light">/</span>}
-                  {crumb.to && !last ? (
-                    <Link
-                      to={crumb.to}
-                      className="truncate text-[13px] text-odoo-text-muted hover:text-odoo-primary"
-                    >
-                      {crumb.label}
-                    </Link>
-                  ) : (
-                    <span className="truncate text-[14px] font-medium text-odoo-text">{crumb.label}</span>
-                  )}
-                </span>
-              );
-            })}
+          <nav aria-label="Хлебные крошки" className="flex min-w-0 flex-col justify-center">
+            {crumbs.length > 1 && (
+              <span className="flex items-center gap-1 text-[11px] leading-[14px]">
+                {crumbs.slice(0, -1).map((crumb, i) => (
+                  <span key={`${crumb.label}-${i}`} className="flex items-center gap-1">
+                    {i > 0 && <span className="text-odoo-text-light">/</span>}
+                    {crumb.to ? (
+                      <Link to={crumb.to} className="text-odoo-primary hover:underline">
+                        {crumb.label}
+                      </Link>
+                    ) : (
+                      <span className="text-odoo-text-muted">{crumb.label}</span>
+                    )}
+                  </span>
+                ))}
+              </span>
+            )}
+            <span className="flex min-w-0 items-center gap-1">
+              <span className="truncate text-[14px] font-medium leading-[18px] text-odoo-text">
+                {crumbs[crumbs.length - 1].label}
+              </span>
+              {cog}
+            </span>
           </nav>
         ) : (
           <span className="text-[14px] font-medium leading-none text-odoo-text">{title}</span>
         )}
         {status}
+        {stats && (
+          <div className="pointer-events-none absolute inset-x-0 hidden justify-center lg:flex">
+            <div className="pointer-events-auto flex items-center gap-2">{stats}</div>
+          </div>
+        )}
         {onSettings && (
           <button
             type="button"
@@ -125,6 +151,7 @@ export function ControlPanel({
           </div>
         )}
         <div className="relative z-10 ml-auto flex items-center gap-1">
+          {pager}
           {typeof count === "number" && count > 0 && (
             <span
               className="mr-1 whitespace-nowrap text-[13px] leading-none text-odoo-text-muted [font-variant-numeric:tabular-nums]"

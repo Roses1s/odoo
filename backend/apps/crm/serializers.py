@@ -45,6 +45,7 @@ class LeadSerializer(serializers.ModelSerializer):
     )
     stage_name = serializers.CharField(source="stage.name", read_only=True)
     assigned_to_email = serializers.EmailField(source="assigned_to.email", read_only=True)
+    assigned_to_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -62,6 +63,7 @@ class LeadSerializer(serializers.ModelSerializer):
             "tag_ids",
             "assigned_to",
             "assigned_to_email",
+            "assigned_to_name",
             "created_by",
             "is_archived",
             "created_at",
@@ -74,6 +76,12 @@ class LeadSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request and getattr(request.user, "role", None) == "operator":
             self.fields["assigned_to"].read_only = True
+
+    def get_assigned_to_name(self, obj) -> str:
+        user = obj.assigned_to
+        if not user:
+            return ""
+        return f"{user.first_name} {user.last_name}".strip() or user.email
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
