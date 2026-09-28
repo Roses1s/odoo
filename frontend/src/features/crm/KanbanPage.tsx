@@ -32,6 +32,27 @@ const dropAnimation: DropAnimation = {
   }),
 };
 
+// The board and list share one in-memory array so client-side sort, the
+// "group by owner" view and drag-and-drop between columns all keep working
+// without a bigger API contract. That only stays safe if the array itself
+// stays bounded: without a ceiling, a filter that matches a few thousand
+// leads used to mean a few thousand fully serialised objects in the tab and
+// as many network round-trips as it took to page through all of them.
+//
+// FETCH_PAGE_SIZE matches the API's page_size ceiling (see
+// core/pagination.py), so MAX_FETCH_PAGES * FETCH_PAGE_SIZE is the hard cap
+// on how many leads a single filter combination will ever pull into the
+// browser. Past that the banner below tells people to narrow the filter
+// instead of silently getting a partial, unlabelled board.
+const FETCH_PAGE_SIZE = 500;
+const MAX_FETCH_PAGES = 4;
+
+interface LeadsPage {
+  leads: Lead[];
+  total: number;
+  truncated: boolean;
+}
+
 function Dropdown({
   label,
   children,
@@ -125,8 +146,8 @@ export function KanbanPage() {
   });
   const leadsQ = useQuery({
     queryKey: ["leads", priority, search, stageF, tagF, archived],
-    queryFn: async () => {
-      const q = new URLSearchParams({ page_size: "500" });
+    queryFn: async (): Promise<LeadsPage> => {
+      const q = new URLSearchParams({ page_size: String(FETCH_PAGE_SIZE) });
       if (priority) q.set("priority", priority);
       if (search) q.set("search", search);
       if (stageF) q.set("stage", stageF);
@@ -135,16 +156,29 @@ export function KanbanPage() {
 
       const all: Lead[] = [];
       let url: string | null = `/crm/leads/?${q}`;
-      while (url) {
+      let total = 0;
+      for (let page = 0; url && page < MAX_FETCH_PAGES; page += 1) {
         const response: {
-          data: { results?: Lead[]; next?: string | null } | Lead[];
+          data: { results?: Lead[]; next?: string | null; count?: number } | Lead[];
         } = await api.get(url);
-        all.push(...unwrapList<Lead>(response.data));
-        if (Array.isArray(response.data) || !response.data.next) break;
+        const rows = unwrapList<Lead>(response.data);
+        all.push(...rows);
+        if (Array.isArray(response.data)) {
+          total = all.length;
+          url = null;
+          break;
+        }
+        total = typeof response.data.count === "number" ? response.data.count : all.length;
+        if (!response.data.next) {
+          url = null;
+          break;
+        }
         const next = new URL(response.data.next, window.location.origin);
         url = `${next.pathname.replace(/^\/api/, "")}${next.search}`;
       }
-      return all;
+      // A truthy url here means the loop stopped because it hit
+      // MAX_FETCH_PAGES, not because the server ran out of pages.
+      return { leads: all, total: Math.max(total, all.length), truncated: url !== null };
     },
   });
 
@@ -155,9 +189,9 @@ export function KanbanPage() {
       setMoveError("");
       await qc.cancelQueries({ queryKey: ["leads"] });
       const key = ["leads", priority, search, stageF, tagF, archived];
-      const prev = qc.getQueryData<Lead[]>(key);
-      qc.setQueryData<Lead[]>(key, (old) =>
-        (old ?? []).map((l) => (l.id === id ? { ...l, stage } : l)),
+      const prev = qc.getQueryData<LeadsPage>(key);
+      qc.setQueryData<LeadsPage>(key, (old) =>
+        old ? { ...old, leads: old.leads.map((l) => (l.id === id ? { ...l, stage } : l)) } : old,
       );
       return { prev, key };
     },
@@ -184,10 +218,12 @@ export function KanbanPage() {
   );
   const stages = stagesQ.data ?? [];
   const leads = useMemo(() => {
-    const all = leadsQ.data ?? [];
+    const all = leadsQ.data?.leads ?? [];
     if (archived === "true") return all;
     return all.filter((l) => !l.is_archived);
   }, [leadsQ.data, archived]);
+  const truncated = leadsQ.data?.truncated ?? false;
+  const totalCount = leadsQ.data?.total ?? leads.length;
 
   const filterActive = Boolean(priority || stageF || tagF || archived);
 
@@ -352,6 +388,16 @@ export function KanbanPage() {
           >
             Повторить
           </button>
+        </div>
+      )}
+
+      {!leadsQ.isError && truncated && (
+        <div
+          role="status"
+          className="mx-4 mt-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+        >
+          Показаны первые {leads.length} из {totalCount} лидов. Уточните поиск, этап или тег, чтобы
+          увидеть остальные.
         </div>
       )}
 
