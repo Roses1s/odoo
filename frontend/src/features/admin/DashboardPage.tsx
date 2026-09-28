@@ -7,7 +7,7 @@ interface Stats {
   leads_archived: number;
   shipments_total: number;
   users_total: number;
-  funnel: { id: number; name: string; count: number; revenue: number }[];
+  funnel: { id: number; name: string; count: number }[];
 }
 
 export function DashboardPage() {

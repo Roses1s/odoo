@@ -21,9 +21,7 @@ import {
   FormTitle,
   InnerGroup,
   Notebook,
-  OdooCheckbox,
   OdooInput,
-  OdooTextarea,
 } from "@/shared/ui/odoo-form";
 import { FormSkeleton } from "@/shared/ui/skeleton";
 
@@ -615,14 +613,6 @@ export function LeadFormPage() {
                   <FormGroup>
                     <div>
                       <InnerGroup title="Реквизиты">
-                        <Field label="Название компании" htmlFor="lead-company">
-                          <OdooInput
-                            id="lead-company"
-                            placeholder="Юридическое название"
-                            value={form.company_name}
-                            onChange={(e) => set("company_name", e.target.value)}
-                          />
-                        </Field>
                         <Field
                           label="ИНН"
                           htmlFor="lead-inn"
@@ -645,22 +635,6 @@ export function LeadFormPage() {
                             className="max-w-[14ch]"
                             value={form.kpp}
                             onChange={(e) => set("kpp", e.target.value)}
-                          />
-                        </Field>
-                        <Field label="ОКВЭД" htmlFor="lead-okved">
-                          <OdooInput
-                            id="lead-okved"
-                            placeholder="27.12 Производство…"
-                            value={form.okved}
-                            onChange={(e) => set("okved", e.target.value)}
-                          />
-                        </Field>
-                        <Field label="Область" htmlFor="lead-region">
-                          <OdooInput
-                            id="lead-region"
-                            placeholder="Челябинская обл"
-                            value={form.region}
-                            onChange={(e) => set("region", e.target.value)}
                           />
                         </Field>
                         <Field label="Часовой пояс" htmlFor="lead-tz">
@@ -701,18 +675,6 @@ export function LeadFormPage() {
                             <span className="text-odoo-text-muted">₽</span>
                           </span>
                         </Field>
-                        <Field label="Ожидаемая выручка" htmlFor="lead-revenue">
-                          <span className="flex items-baseline gap-1">
-                            <OdooInput
-                              id="lead-revenue"
-                              type="number"
-                              className="max-w-[11ch] text-right"
-                              value={form.expected_revenue}
-                              onChange={(e) => set("expected_revenue", e.target.value)}
-                            />
-                            <span className="text-odoo-text-muted">₽</span>
-                          </span>
-                        </Field>
                         <Field label="Дата первого звонка" htmlFor="lead-first-call">
                           <OdooInput
                             id="lead-first-call"
@@ -729,23 +691,6 @@ export function LeadFormPage() {
                             className="max-w-[18ch]"
                             value={form.next_call_date}
                             onChange={(e) => set("next_call_date", e.target.value)}
-                          />
-                        </Field>
-                        <Field label="Взят в работу логистом" htmlFor="lead-taken">
-                          <OdooCheckbox
-                            id="lead-taken"
-                            label="Взят в работу логистом"
-                            checked={form.taken_by_logist}
-                            onChange={(v) => set("taken_by_logist", v)}
-                          />
-                        </Field>
-                        <Field label="Доп. информация" htmlFor="lead-extra">
-                          <OdooTextarea
-                            id="lead-extra"
-                            rows={2}
-                            placeholder="Заметки по клиенту"
-                            value={form.extra_info}
-                            onChange={(e) => set("extra_info", e.target.value)}
                           />
                         </Field>
                       </InnerGroup>
@@ -768,14 +713,6 @@ export function LeadFormPage() {
                             placeholder="+7 351 000-00-00, +7 …"
                             value={form.phone}
                             onChange={(e) => set("phone", e.target.value)}
-                          />
-                        </Field>
-                        <Field label="Мобильный" htmlFor="lead-mobile">
-                          <OdooInput
-                            id="lead-mobile"
-                            placeholder="+7 900 000-00-00"
-                            value={form.mobile}
-                            onChange={(e) => set("mobile", e.target.value)}
                           />
                         </Field>
                         <Field label="Приоритет">

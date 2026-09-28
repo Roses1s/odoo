@@ -31,15 +31,6 @@ function results<T>(data: unknown): T[] {
   return unwrapList<T>(data);
 }
 
-function formatMoney(v: string | number | undefined) {
-  const n = Number(v || 0);
-  return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(n);
-}
-
-function formatStageTotal(v: number) {
-  return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(v);
-}
-
 const STAGE_COLORS: Record<string, string> = {
   slate: "#6C757D",
   purple: "#714B67",
@@ -84,7 +75,6 @@ function StarRating({ value, onChange }: { value: number; onChange?: (n: number)
 
 function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boolean }) {
   const title = `${lead.name} — ${lead.inn}`;
-  const revenue = Number(lead.expected_revenue || 0);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -101,9 +91,6 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
         >
           {lead.logist_contact || lead.name}
         </p>
-        {revenue > 0 && (
-          <p className="mt-1 text-[13px] font-medium text-odoo-text">{formatMoney(revenue)}</p>
-        )}
       </div>
 
       {lead.tags?.length > 0 && (
@@ -422,7 +409,7 @@ function Column({
             )}
           </div>
         </div>
-        <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="mt-1 flex items-center gap-2">
           <div className="h-2.5 w-[150px] overflow-hidden bg-[#dedcdf]">
             <div
               className="h-full min-w-1"
@@ -432,9 +419,6 @@ function Column({
               }}
             />
           </div>
-          <span className="truncate text-[13px] font-semibold text-odoo-text">
-            {formatStageTotal(leads.reduce((sum, lead) => sum + Number(lead.expected_revenue || 0), 0))}
-          </span>
         </div>
       </div>
       <div
@@ -466,7 +450,7 @@ const dropAnimation: DropAnimation = {
   sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.3" } } }),
 };
 
-const LIST_COLUMNS = 8;
+const LIST_COLUMNS = 7;
 
 function ListTh({
   children,
@@ -491,12 +475,6 @@ function ListTh({
 
 function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
   const navigate = useNavigate();
-  const total = useMemo(
-    () => leads.reduce((sum, lead) => sum + Number(lead.expected_revenue || 0), 0),
-    [leads],
-  );
-  const footerCell = "sticky bottom-0 z-10 bg-odoo-bg px-2 py-1 shadow-[inset_0_1px_0_#DEE2E6]";
-
   return (
     <div className="h-[calc(100dvh-90px)] min-h-0 overflow-auto overscroll-contain border-t border-odoo-border-light bg-white [scrollbar-gutter:stable]">
       <table className="w-full min-w-[1180px] table-fixed border-collapse bg-white text-[13px] leading-[18px] text-odoo-text [font-variant-numeric:tabular-nums]">
@@ -506,7 +484,6 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
           <col className="w-[190px]" />
           <col className="w-[190px]" />
           <col className="w-[190px]" />
-          <col className="w-[150px]" />
           <col className="w-[150px]" />
           <col className="w-[80px]" />
         </colgroup>
@@ -518,7 +495,6 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
             <ListTh>Теги</ListTh>
             <ListTh>Ответственный</ListTh>
             <ListTh>Этап</ListTh>
-            <ListTh numeric>Ожидаемая выручка</ListTh>
             <ListTh className="pr-4">Приоритет</ListTh>
           </tr>
         </thead>
@@ -576,24 +552,12 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
               <td className="truncate px-2 py-1" title={lead.stage_name}>
                 {lead.stage_name}
               </td>
-              <td className="truncate px-2 py-1 text-right">{formatMoney(lead.expected_revenue)}</td>
               <td className="px-2 py-1 pr-4">
                 <StarRating value={lead.priority} />
               </td>
             </tr>
           ))}
         </tbody>
-        {leads.length > 0 && (
-          <tfoot>
-            <tr>
-              <td colSpan={6} className={`${footerCell} pl-4`} />
-              <td className={`${footerCell} truncate text-right font-semibold`} title={formatMoney(total)}>
-                {formatMoney(total)}
-              </td>
-              <td className={`${footerCell} pr-4`} />
-            </tr>
-          </tfoot>
-        )}
       </table>
     </div>
   );
