@@ -21,6 +21,9 @@ from apps.crm.serializers import (
 )
 from apps.users.permissions import IsLeadOwnerOrManager, IsManagerOrAbove, IsManagerOrReadOnly
 
+# How many history entries the chatter shows.
+HISTORY_WINDOW = 100
+
 
 class StageViewSet(viewsets.ModelViewSet):
     serializer_class = StageSerializer
@@ -140,8 +143,16 @@ class LeadViewSet(viewsets.ModelViewSet):
                 }
             )
         stage_names = dict(Stage.objects.values_list("id", "name"))
-        history = list(lead.history.all()[:100])
-        previous = {hist.history_id: getattr(hist, "prev_record", None) for hist in history}
+        # simple_history orders newest first, so each record's predecessor is
+        # simply the next item. Asking for prev_record instead would run one
+        # extra query per row — a hundred of them for a busy lead.
+        # One row beyond the visible window is fetched so the oldest shown
+        # entry still knows what changed.
+        window = list(lead.history.all()[: HISTORY_WINDOW + 1])
+        previous = {
+            newer.history_id: older for newer, older in zip(window, window[1:], strict=False)
+        }
+        history = window[:HISTORY_WINDOW]
 
         owner_ids: set[int] = set()
         for hist in history:

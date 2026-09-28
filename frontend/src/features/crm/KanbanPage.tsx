@@ -12,10 +12,20 @@ import {
   type DragStartEvent,
   type DropAnimation,
 } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Clock3, MoreHorizontal, MoreVertical, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  Clock3,
+  MoreHorizontal,
+  MoreVertical,
+  Plus,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell, ControlPanel } from "@/app/layout/AppShell";
@@ -41,9 +51,18 @@ function stageColor(c: string) {
   return STAGE_COLORS[c] || STAGE_COLORS.purple;
 }
 
-function StarRating({ value, onChange }: { value: number; onChange?: (n: number) => void }) {
+function StarRating({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange?: (n: number) => void;
+}) {
   return (
-    <span className="text-[15px] leading-none tracking-tight text-odoo-warning" aria-label={`Приоритет: ${value} из 3`}>
+    <span
+      className="text-[15px] leading-none tracking-tight text-odoo-warning"
+      aria-label={`Приоритет: ${value} из 3`}
+    >
       {[1, 2, 3].map((n) =>
         onChange ? (
           <button
@@ -69,7 +88,13 @@ function StarRating({ value, onChange }: { value: number; onChange?: (n: number)
   );
 }
 
-function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boolean }) {
+function LeadCardBody({
+  lead,
+  menuSpace = false,
+}: {
+  lead: Lead;
+  menuSpace?: boolean;
+}) {
   const title = `${lead.name} — ${lead.inn}`;
 
   return (
@@ -106,13 +131,18 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
       <div className="mt-1 flex shrink-0 items-end justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <StarRating value={lead.priority} />
-          <span title="Активности пока не подключены" className="text-odoo-text-muted">
+          <span
+            title="Активности пока не подключены"
+            className="text-odoo-text-muted"
+          >
             <Clock3 className="h-4 w-4" />
           </span>
         </div>
         <span
           title={
-            [ownerLabel(lead), lead.assigned_to_email].filter(Boolean).join(" · ") || "Не назначен"
+            [ownerLabel(lead), lead.assigned_to_email]
+              .filter(Boolean)
+              .join(" · ") || "Не назначен"
           }
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-odoo-primary text-[9px] font-semibold text-white"
         >
@@ -125,13 +155,23 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
 
 function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: `lead-${lead.id}`,
     disabled: isOverlay,
   });
   const style = isOverlay
     ? undefined
-    : { transform: CSS.Translate.toString(transform), transition: isDragging ? undefined : transition };
+    : {
+        transform: CSS.Translate.toString(transform),
+        transition: isDragging ? undefined : transition,
+      };
 
   const inner = (
     <div
@@ -201,7 +241,13 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
   );
 }
 
-function QuickCreate({ stageId, onDone }: { stageId: number; onDone: () => void }) {
+function QuickCreate({
+  stageId,
+  onDone,
+}: {
+  stageId: number;
+  onDone: () => void;
+}) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [inn, setInn] = useState("");
@@ -253,11 +299,17 @@ function QuickCreate({ stageId, onDone }: { stageId: number; onDone: () => void 
         >
           {create.isPending ? "Добавление…" : "Добавить"}
         </button>
-        <button type="button" className="px-1 py-1 text-[12px] text-odoo-text-muted hover:text-odoo-text" onClick={onDone}>
+        <button
+          type="button"
+          className="px-1 py-1 text-[12px] text-odoo-text-muted hover:text-odoo-text"
+          onClick={onDone}
+        >
           Отмена
         </button>
       </div>
-      {create.isError && <p className="mt-1.5 text-[11px] text-odoo-danger">Проверьте ИНН</p>}
+      {create.isError && (
+        <p className="mt-1.5 text-[11px] text-odoo-danger">Проверьте ИНН</p>
+      )}
     </form>
   );
 }
@@ -279,6 +331,9 @@ function Column({
   onFold: () => void;
   allStages: Stage[];
 }) {
+  const [visible, setVisible] = useState(CARDS_PER_COLUMN);
+  const shown = leads.slice(0, visible);
+  const hidden = leads.length - shown.length;
   const { setNodeRef, isOver } = useDroppable({ id: `stage-${stage.id}` });
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
@@ -288,12 +343,15 @@ function Column({
   const color = stageColor(stage.color);
 
   const patch = useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.patch(`/crm/stages/${stage.id}/`, body),
+    mutationFn: (body: Record<string, unknown>) =>
+      api.patch(`/crm/stages/${stage.id}/`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["stages"] }),
   });
   const remove = useMutation({
     mutationFn: (fallback?: number) =>
-      api.delete(`/crm/stages/${stage.id}/${fallback ? `?fallback_stage_id=${fallback}` : ""}`),
+      api.delete(
+        `/crm/stages/${stage.id}/${fallback ? `?fallback_stage_id=${fallback}` : ""}`,
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["stages"] }),
   });
 
@@ -325,16 +383,23 @@ function Column({
                 onChange={(e) => setName(e.target.value)}
                 onBlur={() => {
                   setEditing(false);
-                  if (name.trim() && name !== stage.name) patch.mutate({ name: name.trim() });
+                  if (name.trim() && name !== stage.name)
+                    patch.mutate({ name: name.trim() });
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                 }}
               />
             ) : (
-              <button type="button" className="truncate text-[15px] font-semibold leading-5 text-odoo-text" onDoubleClick={() => canManage && setEditing(true)}>
+              <button
+                type="button"
+                className="truncate text-[15px] font-semibold leading-5 text-odoo-text"
+                onDoubleClick={() => canManage && setEditing(true)}
+              >
                 {stage.name}
-                <span className="ml-1 font-normal text-odoo-text-muted">{leads.length}</span>
+                <span className="ml-1 font-normal text-odoo-text-muted">
+                  {leads.length}
+                </span>
               </button>
             )}
           </div>
@@ -370,11 +435,27 @@ function Column({
                 </button>
                 {menu && (
                   <div className="absolute right-0 top-6 z-20 min-w-[200px] rounded border border-odoo-border bg-odoo-surface py-1 shadow-lg">
-                    <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => { setMenu(false); setEditing(true); }}>
+                    <button
+                      type="button"
+                      className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                      onClick={() => {
+                        setMenu(false);
+                        setEditing(true);
+                      }}
+                    >
                       Переименовать
                     </button>
-                    <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => { setMenu(false); patch.mutate({ is_closed: !stage.is_closed }); }}>
-                      {stage.is_closed ? "Открывающий этап" : "Закрывающий этап"}
+                    <button
+                      type="button"
+                      className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                      onClick={() => {
+                        setMenu(false);
+                        patch.mutate({ is_closed: !stage.is_closed });
+                      }}
+                    >
+                      {stage.is_closed
+                        ? "Открывающий этап"
+                        : "Закрывающий этап"}
                     </button>
                     <div className="flex flex-wrap gap-1 px-3 py-1.5">
                       {Object.keys(STAGE_COLORS).map((c) => (
@@ -383,7 +464,10 @@ function Column({
                           type="button"
                           className="h-4 w-4 rounded-full border border-white shadow"
                           style={{ background: STAGE_COLORS[c] }}
-                          onClick={() => { setMenu(false); patch.mutate({ color: c }); }}
+                          onClick={() => {
+                            setMenu(false);
+                            patch.mutate({ color: c });
+                          }}
                         />
                       ))}
                     </div>
@@ -421,9 +505,25 @@ function Column({
         ref={setNodeRef}
         className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable] ${isOver ? "bg-odoo-drop" : "bg-odoo-surface"}`}
       >
-        <SortableContext items={leads.map((l) => `lead-${l.id}`)} strategy={verticalListSortingStrategy}>
-          {loading ? Array.from({ length: 3 }).map((_, i) => <KanbanCardSkeleton key={i} />) : leads.map((lead) => <LeadCard key={lead.id} lead={lead} />)}
+        <SortableContext
+          items={shown.map((l) => `lead-${l.id}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <KanbanCardSkeleton key={i} />
+              ))
+            : shown.map((lead) => <LeadCard key={lead.id} lead={lead} />)}
         </SortableContext>
+        {hidden > 0 && !loading && (
+          <button
+            type="button"
+            onClick={() => setVisible((n) => n + CARDS_PER_COLUMN)}
+            className="mx-2.5 mb-2 rounded-[3px] border border-dashed border-odoo-border px-2 py-1.5 text-[13px] text-odoo-text-muted transition-colors hover:bg-odoo-surface-hover hover:text-odoo-text"
+          >
+            Показать ещё {Math.min(CARDS_PER_COLUMN, hidden)} из {leads.length}
+          </button>
+        )}
         {quick ? (
           <QuickCreate stageId={stage.id} onDone={() => setQuick(false)} />
         ) : (
@@ -443,10 +543,18 @@ function Column({
 const dropAnimation: DropAnimation = {
   duration: 160,
   easing: "ease-out",
-  sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: "0.3" } } }),
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: { active: { opacity: "0.3" } },
+  }),
 };
 
 const LIST_COLUMNS = 7;
+
+// Odoo renders a column page at a time. Drawing every card and every row at
+// once costs thousands of DOM nodes on a real database and makes dragging
+// sluggish, so the rest appears on demand.
+const CARDS_PER_COLUMN = 20;
+const ROWS_PER_PAGE = 80;
 
 function ListTh({
   children,
@@ -471,6 +579,9 @@ function ListTh({
 
 function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
   const navigate = useNavigate();
+  const [visible, setVisible] = useState(ROWS_PER_PAGE);
+  const shown = leads.slice(0, visible);
+  const hidden = leads.length - shown.length;
   return (
     <div className="h-[calc(100dvh-90px)] min-h-0 overflow-auto overscroll-contain border-t border-odoo-border-light bg-odoo-surface [scrollbar-gutter:stable]">
       <table className="w-full min-w-[1180px] table-fixed border-collapse bg-odoo-surface text-[13px] leading-[18px] text-odoo-text [font-variant-numeric:tabular-nums]">
@@ -495,17 +606,25 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
           </tr>
         </thead>
         <tbody>
-          {loading && Array.from({ length: 10 }).map((_, i) => <ListRowSkeleton key={i} cols={LIST_COLUMNS} />)}
+          {loading &&
+            Array.from({ length: 10 }).map((_, i) => (
+              <ListRowSkeleton key={i} cols={LIST_COLUMNS} />
+            ))}
 
           {!loading && leads.length === 0 && (
             <tr>
-              <td colSpan={LIST_COLUMNS} className="px-4 py-12 text-center text-[13px] text-odoo-text-muted">
-                Нет лидов. Нажмите <span className="font-medium text-odoo-text">Новый</span>, чтобы создать первый.
+              <td
+                colSpan={LIST_COLUMNS}
+                className="px-4 py-12 text-center text-[13px] text-odoo-text-muted"
+              >
+                Нет лидов. Нажмите{" "}
+                <span className="font-medium text-odoo-text">Новый</span>, чтобы
+                создать первый.
               </td>
             </tr>
           )}
 
-          {leads.map((lead) => (
+          {shown.map((lead) => (
             <tr
               key={lead.id}
               className="cursor-pointer border-b border-odoo-border-light bg-odoo-surface hover:bg-odoo-surface-hover"
@@ -515,7 +634,10 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
                 {lead.name}
               </td>
               <td className="truncate px-2 py-1">{lead.inn}</td>
-              <td className="truncate px-2 py-1 text-odoo-text-muted" title={lead.logist_contact || undefined}>
+              <td
+                className="truncate px-2 py-1 text-odoo-text-muted"
+                title={lead.logist_contact || undefined}
+              >
                 {lead.logist_contact || "—"}
               </td>
               <td className="overflow-hidden px-2 py-1">
@@ -540,7 +662,10 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-odoo-primary text-[9px] font-semibold text-white">
                     {ownerInitials(lead)}
                   </span>
-                  <span className="truncate" title={lead.assigned_to_email || "Не назначен"}>
+                  <span
+                    className="truncate"
+                    title={lead.assigned_to_email || "Не назначен"}
+                  >
                     {ownerLabel(lead) || "Не назначен"}
                   </span>
                 </span>
@@ -553,13 +678,35 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
               </td>
             </tr>
           ))}
+          {hidden > 0 && (
+            <tr>
+              <td colSpan={LIST_COLUMNS} className="px-4 py-2">
+                <button
+                  type="button"
+                  onClick={() => setVisible((n) => n + ROWS_PER_PAGE)}
+                  className="text-[13px] text-odoo-action hover:underline"
+                >
+                  Показать ещё {Math.min(ROWS_PER_PAGE, hidden)} из{" "}
+                  {leads.length}
+                </button>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
   );
 }
 
-function Dropdown({ label, children, active }: { label: string; children: React.ReactNode; active?: boolean }) {
+function Dropdown({
+  label,
+  children,
+  active,
+}: {
+  label: string;
+  children: React.ReactNode;
+  active?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative min-w-0 px-1">
@@ -572,8 +719,16 @@ function Dropdown({ label, children, active }: { label: string; children: React.
       </button>
       {open && (
         <>
-          <button type="button" className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-label="Закрыть" />
-          <div className="absolute left-0 z-50 mt-1 max-h-[360px] min-w-full overflow-y-auto rounded-[3px] border border-odoo-border bg-odoo-surface py-1 shadow-lg" onClick={() => setOpen(false)}>
+          <button
+            type="button"
+            className="fixed inset-0 z-10"
+            onClick={() => setOpen(false)}
+            aria-label="Закрыть"
+          />
+          <div
+            className="absolute left-0 z-50 mt-1 max-h-[360px] min-w-full overflow-y-auto rounded-[3px] border border-odoo-border bg-odoo-surface py-1 shadow-lg"
+            onClick={() => setOpen(false)}
+          >
             {children}
           </div>
         </>
@@ -628,7 +783,8 @@ export function KanbanPage() {
 
   const stagesQ = useQuery({
     queryKey: ["stages"],
-    queryFn: async () => unwrapList<Stage>((await api.get("/crm/stages/")).data),
+    queryFn: async () =>
+      unwrapList<Stage>((await api.get("/crm/stages/")).data),
   });
   const tagsQ = useQuery({
     queryKey: ["tags"],
@@ -647,7 +803,9 @@ export function KanbanPage() {
       const all: Lead[] = [];
       let url: string | null = `/crm/leads/?${q}`;
       while (url) {
-        const response: { data: { results?: Lead[]; next?: string | null } | Lead[] } = await api.get(url);
+        const response: {
+          data: { results?: Lead[]; next?: string | null } | Lead[];
+        } = await api.get(url);
         all.push(...unwrapList<Lead>(response.data));
         if (Array.isArray(response.data) || !response.data.next) break;
         const next = new URL(response.data.next, window.location.origin);
@@ -658,13 +816,16 @@ export function KanbanPage() {
   });
 
   const moveLead = useMutation({
-    mutationFn: ({ id, stage }: { id: number; stage: number }) => api.patch(`/crm/leads/${id}/`, { stage }),
+    mutationFn: ({ id, stage }: { id: number; stage: number }) =>
+      api.patch(`/crm/leads/${id}/`, { stage }),
     onMutate: async ({ id, stage }) => {
       setMoveError("");
       await qc.cancelQueries({ queryKey: ["leads"] });
       const key = ["leads", priority, search, stageF, tagF, archived];
       const prev = qc.getQueryData<Lead[]>(key);
-      qc.setQueryData<Lead[]>(key, (old) => (old ?? []).map((l) => (l.id === id ? { ...l, stage } : l)));
+      qc.setQueryData<Lead[]>(key, (old) =>
+        (old ?? []).map((l) => (l.id === id ? { ...l, stage } : l)),
+      );
       return { prev, key };
     },
     onError: (_e, _v, ctx) => {
@@ -684,7 +845,9 @@ export function KanbanPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    }),
   );
   const stages = stagesQ.data ?? [];
   const leads = useMemo(() => {
@@ -713,23 +876,35 @@ export function KanbanPage() {
     if (!over) return;
     const leadId = Number(String(active.id).replace("lead-", ""));
     let stageId: number | null = null;
-    if (String(over.id).startsWith("stage-")) stageId = Number(String(over.id).replace("stage-", ""));
+    if (String(over.id).startsWith("stage-"))
+      stageId = Number(String(over.id).replace("stage-", ""));
     else if (String(over.id).startsWith("lead-")) {
-      const other = leads.find((l) => l.id === Number(String(over.id).replace("lead-", "")));
+      const other = leads.find(
+        (l) => l.id === Number(String(over.id).replace("lead-", "")),
+      );
       stageId = other?.stage ?? null;
     }
     const lead = leads.find((l) => l.id === leadId);
-    if (lead && stageId && lead.stage !== stageId) moveLead.mutate({ id: leadId, stage: stageId });
+    if (lead && stageId && lead.stage !== stageId)
+      moveLead.mutate({ id: leadId, stage: stageId });
   }
 
   const groupColumns =
     group === "assigned"
-      ? Array.from(new Set(leads.map((l) => l.assigned_to_email || "Не назначен"))).map((email) => ({
+      ? Array.from(
+          new Set(leads.map((l) => l.assigned_to_email || "Не назначен")),
+        ).map((email) => ({
           key: email,
           title: email,
-          items: leads.filter((l) => (l.assigned_to_email || "Не назначен") === email),
+          items: leads.filter(
+            (l) => (l.assigned_to_email || "Не назначен") === email,
+          ),
         }))
-      : stages.map((s) => ({ key: String(s.id), title: s.name, items: leads.filter((l) => l.stage === s.id) }));
+      : stages.map((s) => ({
+          key: String(s.id),
+          title: s.name,
+          items: leads.filter((l) => l.stage === s.id),
+        }));
 
   return (
     <AppShell>
@@ -745,125 +920,199 @@ export function KanbanPage() {
       >
         {settingsOpen && (
           <div className="absolute left-1/2 top-full z-40 grid w-[min(calc(100vw-1.5rem),600px)] -translate-x-1/2 grid-cols-2 divide-x divide-odoo-border-light rounded-b-[3px] border border-t-0 border-odoo-border bg-odoo-surface p-1 shadow-lg">
-        <Dropdown label="Фильтры" active={filterActive}>
-          <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("priority", "")}>
-            Все приоритеты
-          </button>
-          {[1, 2, 3].map((n) => (
-            <button key={n} type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("priority", String(n))}>
-              {"★".repeat(n)}
-            </button>
-          ))}
-          <div className="my-1 border-t border-odoo-border-light" />
-          {stages.map((s) => (
-            <button key={s.id} type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("stage", String(s.id))}>
-              Этап: {s.name}
-            </button>
-          ))}
-          <div className="my-1 border-t border-odoo-border-light" />
-          {(tagsQ.data ?? []).map((t) => (
-            <button key={t.id} type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("tags", String(t.id))}>
-              Тег: {t.name}
-            </button>
-          ))}
-          <div className="my-1 border-t border-odoo-border-light" />
-          <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("is_archived", archived === "true" ? "" : "true")}>
-            {archived === "true" ? "Скрыть архив" : "Архив"}
-          </button>
-          {filterActive && (
-            <button
-              type="button"
-              className="block w-full px-3 py-1.5 text-left text-sm text-odoo-action hover:bg-odoo-bg"
-              onClick={() => {
-                const next = new URLSearchParams(params);
-                ["priority", "stage", "tags", "is_archived"].forEach((k) => next.delete(k));
-                setParams(next);
-              }}
-            >
-              Сбросить
-            </button>
-          )}
-        </Dropdown>
-        <Dropdown label="Группировка" active={group !== "stage"}>
-          <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("group", "")}>
-            По этапам
-          </button>
-          <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("group", "assigned")}>
-            По ответственному
-          </button>
-        </Dropdown>
+            <Dropdown label="Фильтры" active={filterActive}>
+              <button
+                type="button"
+                className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                onClick={() => setFilter("priority", "")}
+              >
+                Все приоритеты
+              </button>
+              {[1, 2, 3].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                  onClick={() => setFilter("priority", String(n))}
+                >
+                  {"★".repeat(n)}
+                </button>
+              ))}
+              <div className="my-1 border-t border-odoo-border-light" />
+              {stages.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                  onClick={() => setFilter("stage", String(s.id))}
+                >
+                  Этап: {s.name}
+                </button>
+              ))}
+              <div className="my-1 border-t border-odoo-border-light" />
+              {(tagsQ.data ?? []).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                  onClick={() => setFilter("tags", String(t.id))}
+                >
+                  Тег: {t.name}
+                </button>
+              ))}
+              <div className="my-1 border-t border-odoo-border-light" />
+              <button
+                type="button"
+                className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                onClick={() =>
+                  setFilter("is_archived", archived === "true" ? "" : "true")
+                }
+              >
+                {archived === "true" ? "Скрыть архив" : "Архив"}
+              </button>
+              {filterActive && (
+                <button
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-sm text-odoo-action hover:bg-odoo-bg"
+                  onClick={() => {
+                    const next = new URLSearchParams(params);
+                    ["priority", "stage", "tags", "is_archived"].forEach((k) =>
+                      next.delete(k),
+                    );
+                    setParams(next);
+                  }}
+                >
+                  Сбросить
+                </button>
+              )}
+            </Dropdown>
+            <Dropdown label="Группировка" active={group !== "stage"}>
+              <button
+                type="button"
+                className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                onClick={() => setFilter("group", "")}
+              >
+                По этапам
+              </button>
+              <button
+                type="button"
+                className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                onClick={() => setFilter("group", "assigned")}
+              >
+                По ответственному
+              </button>
+            </Dropdown>
           </div>
         )}
       </ControlPanel>
 
       {moveError && (
-        <div role="alert" className="mx-4 mt-3 rounded border border-odoo-danger/30 bg-red-50 px-3 py-2 text-sm text-odoo-danger">
+        <div
+          role="alert"
+          className="mx-4 mt-3 rounded border border-odoo-danger/30 bg-red-50 px-3 py-2 text-sm text-odoo-danger"
+        >
           {moveError}
         </div>
       )}
 
       {view !== "list" && leads.length === 0 && !leadsQ.isLoading && (
         <div className="px-4 pt-10 text-center text-sm text-odoo-text-muted">
-          Нет лидов. Нажмите <span className="font-medium text-odoo-text">Новый</span> или «+ Добавить» в колонке.
+          Нет лидов. Нажмите{" "}
+          <span className="font-medium text-odoo-text">Новый</span> или «+
+          Добавить» в колонке.
         </div>
       )}
 
-      {view === "list" && <LeadListView leads={leads} loading={leadsQ.isLoading} />}
+      {view === "list" && (
+        <LeadListView leads={leads} loading={leadsQ.isLoading} />
+      )}
 
       {view !== "list" && (
-      <div className="flex h-[calc(100dvh-90px)] min-h-0 snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden overscroll-x-contain border-t border-odoo-border-light bg-odoo-surface md:snap-none">
-        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragCancel={() => setActiveLead(null)} onDragEnd={onDragEnd}>
-          {group === "stage"
-            ? stages.map((stage) => (
-                <Column
-                  key={stage.id}
-                  stage={stage}
-                  leads={leads.filter((l) => l.stage === stage.id)}
-                  loading={leadsQ.isLoading}
-                  canManage={!!canManage}
-                  folded={folded.includes(stage.id)}
-                  onFold={() => setFolded((f) => (f.includes(stage.id) ? f.filter((x) => x !== stage.id) : [...f, stage.id]))}
-                  allStages={stages}
+        <div className="flex h-[calc(100dvh-90px)] min-h-0 snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden overscroll-x-contain border-t border-odoo-border-light bg-odoo-surface md:snap-none">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={onDragStart}
+            onDragCancel={() => setActiveLead(null)}
+            onDragEnd={onDragEnd}
+          >
+            {group === "stage"
+              ? stages.map((stage) => (
+                  <Column
+                    key={stage.id}
+                    stage={stage}
+                    leads={leads.filter((l) => l.stage === stage.id)}
+                    loading={leadsQ.isLoading}
+                    canManage={!!canManage}
+                    folded={folded.includes(stage.id)}
+                    onFold={() =>
+                      setFolded((f) =>
+                        f.includes(stage.id)
+                          ? f.filter((x) => x !== stage.id)
+                          : [...f, stage.id],
+                      )
+                    }
+                    allStages={stages}
+                  />
+                ))
+              : groupColumns.map((col) => (
+                  <div
+                    key={col.key}
+                    className="flex h-full w-[325px] shrink-0 flex-col border-r border-odoo-border-light"
+                  >
+                    <div className="mb-2 text-[13px] font-semibold">
+                      {col.title}{" "}
+                      <span className="font-normal text-odoo-text-muted">
+                        {col.items.length}
+                      </span>
+                    </div>
+                    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-odoo-surface [scrollbar-gutter:stable]">
+                      {col.items.map((lead) => (
+                        <Link
+                          key={lead.id}
+                          to={`/crm/leads/${lead.id}`}
+                          className="overflow-hidden border-b border-odoo-border-light bg-odoo-surface px-2.5 py-2 hover:bg-odoo-surface-hover"
+                        >
+                          <LeadCardBody lead={lead} />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            <DragOverlay dropAnimation={dropAnimation} zIndex={50}>
+              {activeLead ? <LeadCard lead={activeLead} isOverlay /> : null}
+            </DragOverlay>
+          </DndContext>
+          {canManage && group === "stage" && (
+            <div className="w-[200px] shrink-0 pt-1">
+              {newStage ? (
+                <input
+                  autoFocus
+                  className="w-full rounded border border-odoo-border px-2 py-1.5 text-sm"
+                  placeholder="Название этапа"
+                  value={stageName}
+                  onChange={(e) => setStageName(e.target.value)}
+                  onBlur={() =>
+                    stageName.trim() && createStage.mutate(stageName.trim())
+                  }
+                  onKeyDown={(e) =>
+                    e.key === "Enter" &&
+                    stageName.trim() &&
+                    createStage.mutate(stageName.trim())
+                  }
                 />
-              ))
-            : groupColumns.map((col) => (
-                <div key={col.key} className="flex h-full w-[325px] shrink-0 flex-col border-r border-odoo-border-light">
-                  <div className="mb-2 text-[13px] font-semibold">
-                    {col.title} <span className="font-normal text-odoo-text-muted">{col.items.length}</span>
-                  </div>
-                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-odoo-surface [scrollbar-gutter:stable]">
-                    {col.items.map((lead) => (
-                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="overflow-hidden border-b border-odoo-border-light bg-odoo-surface px-2.5 py-2 hover:bg-odoo-surface-hover">
-                        <LeadCardBody lead={lead} />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-          <DragOverlay dropAnimation={dropAnimation} zIndex={50}>
-            {activeLead ? <LeadCard lead={activeLead} isOverlay /> : null}
-          </DragOverlay>
-        </DndContext>
-        {canManage && group === "stage" && (
-          <div className="w-[200px] shrink-0 pt-1">
-            {newStage ? (
-              <input
-                autoFocus
-                className="w-full rounded border border-odoo-border px-2 py-1.5 text-sm"
-                placeholder="Название этапа"
-                value={stageName}
-                onChange={(e) => setStageName(e.target.value)}
-                onBlur={() => stageName.trim() && createStage.mutate(stageName.trim())}
-                onKeyDown={(e) => e.key === "Enter" && stageName.trim() && createStage.mutate(stageName.trim())}
-              />
-            ) : (
-              <button type="button" className="flex items-center gap-1 text-sm text-odoo-text-muted hover:text-odoo-text" onClick={() => setNewStage(true)}>
-                <Plus className="h-4 w-4" /> Добавить этап
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+              ) : (
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-sm text-odoo-text-muted hover:text-odoo-text"
+                  onClick={() => setNewStage(true)}
+                >
+                  <Plus className="h-4 w-4" /> Добавить этап
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </AppShell>
   );
