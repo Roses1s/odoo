@@ -23,6 +23,7 @@ import { useAuthStore } from "@/features/auth/store";
 import { api } from "@/shared/api/client";
 import { unwrapList } from "@/shared/lib/http";
 import { innChecksumOk, normalizeInn } from "@/shared/lib/inn";
+import { ownerInitials, ownerLabel } from "@/shared/lib/owner";
 import type { Lead, Stage, Tag } from "@/shared/types";
 import { KanbanCardSkeleton, ListRowSkeleton } from "@/shared/ui/skeleton";
 
@@ -51,11 +52,6 @@ const STAGE_COLORS: Record<string, string> = {
 
 function stageColor(c: string) {
   return STAGE_COLORS[c] || STAGE_COLORS.purple;
-}
-
-function initials(email?: string) {
-  const s = (email || "?").split("@")[0];
-  return s.slice(0, 2).toUpperCase();
 }
 
 function StarRating({ value, onChange }: { value: number; onChange?: (n: number) => void }) {
@@ -132,10 +128,12 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
           </span>
         </div>
         <span
-          title={lead.assigned_to_email || "Не назначен"}
+          title={
+            [ownerLabel(lead), lead.assigned_to_email].filter(Boolean).join(" · ") || "Не назначен"
+          }
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-odoo-primary text-[9px] font-semibold text-white"
         >
-          {initials(lead.assigned_to_email)}
+          {ownerInitials(lead)}
         </span>
       </div>
     </div>
@@ -568,10 +566,10 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
               <td className="px-2 py-1">
                 <span className="flex items-center gap-1.5 overflow-hidden">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-odoo-primary text-[9px] font-semibold text-white">
-                    {initials(lead.assigned_to_email)}
+                    {ownerInitials(lead)}
                   </span>
                   <span className="truncate" title={lead.assigned_to_email || "Не назначен"}>
-                    {lead.assigned_to_email || "Не назначен"}
+                    {ownerLabel(lead) || "Не назначен"}
                   </span>
                 </span>
               </td>

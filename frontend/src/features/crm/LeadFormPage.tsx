@@ -7,6 +7,7 @@ import { useAuthStore } from "@/features/auth/store";
 import { api } from "@/shared/api/client";
 import { apiErrorMessage } from "@/shared/lib/http";
 import { innChecksumOk, normalizeInn } from "@/shared/lib/inn";
+import { ownerInitials, ownerLabel } from "@/shared/lib/owner";
 import type { Attachment, Lead, Stage, Tag, Shipment, TimelineEntry } from "@/shared/types";
 import { Chatter } from "@/shared/ui/chatter";
 import {
@@ -20,7 +21,9 @@ import {
   FormTitle,
   InnerGroup,
   Notebook,
+  OdooCheckbox,
   OdooInput,
+  OdooTextarea,
 } from "@/shared/ui/odoo-form";
 import { FormSkeleton } from "@/shared/ui/skeleton";
 
@@ -33,8 +36,22 @@ function results<T>(data: unknown): T[] {
 const empty = {
   name: "",
   inn: "",
+  kpp: "",
+  company_name: "",
+  okved: "",
+  region: "",
+  timezone: "",
+  company_email: "",
+  phone: "",
+  mobile: "",
   logist_email: "",
   logist_contact: "",
+  logist_phone: "",
+  credit_limit: "0",
+  extra_info: "",
+  first_call_date: "",
+  next_call_date: "",
+  taken_by_logist: false,
   expected_revenue: "0",
   priority: 0,
   stage: 0,
@@ -47,8 +64,22 @@ function toForm(lead: Lead): FormState {
   return {
     name: lead.name,
     inn: lead.inn,
+    kpp: lead.kpp || "",
+    company_name: lead.company_name || "",
+    okved: lead.okved || "",
+    region: lead.region || "",
+    timezone: lead.timezone || "",
+    company_email: lead.company_email || "",
+    phone: lead.phone || "",
+    mobile: lead.mobile || "",
     logist_email: lead.logist_email || "",
     logist_contact: lead.logist_contact || "",
+    logist_phone: lead.logist_phone || "",
+    credit_limit: String(lead.credit_limit ?? "0"),
+    extra_info: lead.extra_info || "",
+    first_call_date: lead.first_call_date || "",
+    next_call_date: lead.next_call_date || "",
+    taken_by_logist: Boolean(lead.taken_by_logist),
     expected_revenue: String(lead.expected_revenue),
     priority: lead.priority,
     stage: lead.stage,
@@ -58,11 +89,6 @@ function toForm(lead: Lead): FormState {
 
 function normalized(state: FormState) {
   return JSON.stringify({ ...state, tag_ids: [...state.tag_ids].sort((a, b) => a - b) });
-}
-
-function initials(email?: string | null) {
-  if (!email) return "—";
-  return email.split("@")[0].slice(0, 2).toUpperCase();
 }
 
 const TAG_STYLES: Record<string, string> = {
@@ -231,6 +257,9 @@ export function LeadFormPage() {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (!form.name.trim()) {
+        throw new Error("Укажите название лида");
+      }
       const inn = normalizeInn(form.inn);
       if (inn.length !== 10 && inn.length !== 12) {
         throw new Error("ИНН должен содержать 10 или 12 цифр");
@@ -238,7 +267,14 @@ export function LeadFormPage() {
       if (!innChecksumOk(inn)) {
         throw new Error("Некорректный ИНН (проверьте контрольную сумму ФНС)");
       }
-      const payload = { ...form, inn, expected_revenue: form.expected_revenue || 0 };
+      const payload = {
+        ...form,
+        inn,
+        expected_revenue: form.expected_revenue || 0,
+        credit_limit: form.credit_limit || 0,
+        first_call_date: form.first_call_date || null,
+        next_call_date: form.next_call_date || null,
+      };
       if (isNew) return (await api.post("/crm/leads/", payload)).data as Lead;
       return (await api.patch(`/crm/leads/${id}/`, payload)).data as Lead;
     },
@@ -351,15 +387,8 @@ export function LeadFormPage() {
   const stages = stagesQ.data ?? [];
   const shipments = shipsQ.data ?? [];
   const loading = leadQ.isLoading && !isNew;
-  const owner = leadQ.data?.assigned_to_name || leadQ.data?.assigned_to_email || "";
-  const ownerInitials = leadQ.data?.assigned_to_name
-    ? leadQ.data.assigned_to_name
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((p) => p[0])
-        .join("")
-        .toUpperCase()
-    : initials(leadQ.data?.assigned_to_email);
+  const owner = leadQ.data ? ownerLabel(leadQ.data) : "";
+  const ownerAvatar = leadQ.data ? ownerInitials(leadQ.data) : "—";
 
   const notebookTabs = useMemo(
     () => [
@@ -575,8 +604,8 @@ export function LeadFormPage() {
                 <>
                   <FormTitle>
                     <OdooInput
-                      aria-label="Название компании"
-                      placeholder="например, ООО «Ромашка»"
+                      aria-label="Название лида"
+                      placeholder="например, ООО «Ромашка» — 7451234567"
                       className="!px-1 !text-[24px] !leading-[34px]"
                       value={form.name}
                       onChange={(e) => set("name", e.target.value)}
@@ -586,6 +615,14 @@ export function LeadFormPage() {
                   <FormGroup>
                     <div>
                       <InnerGroup title="Реквизиты">
+                        <Field label="Название компании" htmlFor="lead-company">
+                          <OdooInput
+                            id="lead-company"
+                            placeholder="Юридическое название"
+                            value={form.company_name}
+                            onChange={(e) => set("company_name", e.target.value)}
+                          />
+                        </Field>
                         <Field
                           label="ИНН"
                           htmlFor="lead-inn"
@@ -599,11 +636,47 @@ export function LeadFormPage() {
                             onChange={(e) => set("inn", e.target.value)}
                           />
                         </Field>
+                        <Field label="КПП" htmlFor="lead-kpp">
+                          <OdooInput
+                            id="lead-kpp"
+                            inputMode="numeric"
+                            maxLength={9}
+                            placeholder="9 цифр"
+                            className="max-w-[14ch]"
+                            value={form.kpp}
+                            onChange={(e) => set("kpp", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="ОКВЭД" htmlFor="lead-okved">
+                          <OdooInput
+                            id="lead-okved"
+                            placeholder="27.12 Производство…"
+                            value={form.okved}
+                            onChange={(e) => set("okved", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Область" htmlFor="lead-region">
+                          <OdooInput
+                            id="lead-region"
+                            placeholder="Челябинская обл"
+                            value={form.region}
+                            onChange={(e) => set("region", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Часовой пояс" htmlFor="lead-tz">
+                          <OdooInput
+                            id="lead-tz"
+                            placeholder="МСК+2"
+                            className="max-w-[14ch]"
+                            value={form.timezone}
+                            onChange={(e) => set("timezone", e.target.value)}
+                          />
+                        </Field>
                         <Field label="Продавец">
                           {owner ? (
                             <span className="flex items-center gap-1.5 pt-[2px]">
                               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-odoo-primary text-[9px] font-semibold text-white">
-                                {ownerInitials}
+                                {ownerAvatar}
                               </span>
                               <span className="truncate" title={leadQ.data?.assigned_to_email || owner}>
                                 {owner}
@@ -616,6 +689,18 @@ export function LeadFormPage() {
                       </InnerGroup>
 
                       <InnerGroup>
+                        <Field label="Лимит" htmlFor="lead-limit">
+                          <span className="flex items-baseline gap-1">
+                            <OdooInput
+                              id="lead-limit"
+                              type="number"
+                              className="max-w-[11ch] text-right"
+                              value={form.credit_limit}
+                              onChange={(e) => set("credit_limit", e.target.value)}
+                            />
+                            <span className="text-odoo-text-muted">₽</span>
+                          </span>
+                        </Field>
                         <Field label="Ожидаемая выручка" htmlFor="lead-revenue">
                           <span className="flex items-baseline gap-1">
                             <OdooInput
@@ -628,11 +713,71 @@ export function LeadFormPage() {
                             <span className="text-odoo-text-muted">₽</span>
                           </span>
                         </Field>
+                        <Field label="Дата первого звонка" htmlFor="lead-first-call">
+                          <OdooInput
+                            id="lead-first-call"
+                            type="date"
+                            className="max-w-[18ch]"
+                            value={form.first_call_date}
+                            onChange={(e) => set("first_call_date", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Дата следующего звонка" htmlFor="lead-next-call">
+                          <OdooInput
+                            id="lead-next-call"
+                            type="date"
+                            className="max-w-[18ch]"
+                            value={form.next_call_date}
+                            onChange={(e) => set("next_call_date", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Взят в работу логистом" htmlFor="lead-taken">
+                          <OdooCheckbox
+                            id="lead-taken"
+                            label="Взят в работу логистом"
+                            checked={form.taken_by_logist}
+                            onChange={(v) => set("taken_by_logist", v)}
+                          />
+                        </Field>
+                        <Field label="Доп. информация" htmlFor="lead-extra">
+                          <OdooTextarea
+                            id="lead-extra"
+                            rows={2}
+                            placeholder="Заметки по клиенту"
+                            value={form.extra_info}
+                            onChange={(e) => set("extra_info", e.target.value)}
+                          />
+                        </Field>
                       </InnerGroup>
                     </div>
 
                     <div>
                       <InnerGroup>
+                        <Field label="Email" htmlFor="lead-company-email">
+                          <OdooInput
+                            id="lead-company-email"
+                            type="email"
+                            placeholder="info@example.ru"
+                            value={form.company_email}
+                            onChange={(e) => set("company_email", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Телефон" htmlFor="lead-phone">
+                          <OdooInput
+                            id="lead-phone"
+                            placeholder="+7 351 000-00-00, +7 …"
+                            value={form.phone}
+                            onChange={(e) => set("phone", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Мобильный" htmlFor="lead-mobile">
+                          <OdooInput
+                            id="lead-mobile"
+                            placeholder="+7 900 000-00-00"
+                            value={form.mobile}
+                            onChange={(e) => set("mobile", e.target.value)}
+                          />
+                        </Field>
                         <Field label="Приоритет">
                           <span className="inline-flex items-center pt-[2px] text-[16px] leading-none text-odoo-warning">
                             {[1, 2, 3].map((n) => (
@@ -664,6 +809,14 @@ export function LeadFormPage() {
                             placeholder="Фамилия Имя"
                             value={form.logist_contact}
                             onChange={(e) => set("logist_contact", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Телефон логиста" htmlFor="lead-logist-phone">
+                          <OdooInput
+                            id="lead-logist-phone"
+                            placeholder="+7 900 000-00-00"
+                            value={form.logist_phone}
+                            onChange={(e) => set("logist_phone", e.target.value)}
                           />
                         </Field>
                         <Field label="Email логиста" htmlFor="lead-email">

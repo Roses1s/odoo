@@ -1,5 +1,10 @@
 import { CloudUpload, Undo2 } from "lucide-react";
-import { useState, type InputHTMLAttributes, type ReactNode } from "react";
+import {
+  useState,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type TextareaHTMLAttributes,
+} from "react";
 
 /**
  * Odoo 17 form primitives.
@@ -259,6 +264,43 @@ export function OdooInput({ className = "", ...props }: InputHTMLAttributes<HTML
     <input
       {...props}
       className={`w-full rounded-[3px] border border-transparent bg-transparent px-1 py-[2px] text-[13px] leading-[19px] text-odoo-text outline-none transition-colors placeholder:text-odoo-text-light hover:border-odoo-border focus:border-odoo-primary ${className}`}
+    />
+  );
+}
+
+/** Multi-line o_input (Odoo text field). */
+export function OdooTextarea({
+  className = "",
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={`w-full resize-y rounded-[3px] border border-transparent bg-transparent px-1 py-[2px] text-[13px] leading-[19px] text-odoo-text outline-none transition-colors placeholder:text-odoo-text-light hover:border-odoo-border focus:border-odoo-primary ${className}`}
+    />
+  );
+}
+
+/** Odoo boolean widget. */
+export function OdooCheckbox({
+  checked,
+  onChange,
+  id,
+  label,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  id?: string;
+  label?: string;
+}) {
+  return (
+    <input
+      id={id}
+      type="checkbox"
+      aria-label={label}
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      className="mt-[3px] h-[14px] w-[14px] cursor-pointer accent-odoo-primary"
     />
   );
 }
