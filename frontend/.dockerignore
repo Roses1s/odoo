@@ -1,0 +1,10 @@
+# Without this, `COPY . .` (which runs *after* `npm ci` in the Dockerfile)
+# overwrites the image's freshly installed node_modules with whatever is on
+# the host disk running the build — wrong platform's native binaries
+# (esbuild/rollup) if the host isn't Linux/x86, or just a stale copy either
+# way. Same story for a leftover local build in dist/.
+node_modules
+dist
+
+.env
+.env.*

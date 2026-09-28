@@ -60,26 +60,45 @@ ufw --force enable || true
 
 ## Шаг Г. Положить проект на сервер
 
-**Вариант 1 — GitHub** (удобнее). С компьютера, где лежит код:
+**Вариант 1 — GitHub** (удобнее). Сначала узнайте, в какой ветке вы сейчас работаете:
+
+```bash
+git branch --show-current
+```
+
+Дальше везде подставляйте это имя вместо `<ваша-ветка>`. С компьютера, где лежит код:
 
 ```bash
 git add -A
 git commit -m "CRM ready for deploy"
-git push origin arena/01a0d6dd-odoo
+git push origin <ваша-ветка>
 ```
+
+`.env` в этот коммит не попадёт, даже если он у вас уже создан и лежит в папке
+проекта — он в `.gitignore` специально, чтобы `git add -A` никогда не отправил
+реальные пароли/ключи в GitHub. Секреты передаются на сервер только вручную,
+на Шаге Д.
 
 На сервере:
 
 ```bash
 cd /opt
-git clone -b arena/01a0d6dd-odoo https://github.com/Roses1s/odoo.git crm
+git clone -b <ваша-ветка> https://github.com/Roses1s/odoo.git crm
 cd /opt/crm
 ```
 
-**Вариант 2 — без Git.** С вашего ПК (не с сервера), из папки проекта:
+**Вариант 2 — без Git.** `scp -r .` тут не подходит: он скопирует буквально
+всё из папки проекта, включая то, что специально не должно попадать в
+git и уж тем более на сервер — `node_modules` (сотни МБ и, если ваш ПК не
+Linux/x86, собран под другую платформу — фронтенд не соберётся или упадёт
+в рантайме), `.venv`, тестовую `backend/.pgdata`, а если вы уже успели
+создать локальный `.env` — то и его, с настоящими паролями. Используйте
+`rsync` с тем же списком исключений, что и у git (`--exclude-from=.gitignore`),
+и явно исключите сам `.env`:
 
 ```bash
-scp -r . root@77.222.38.191:/opt/crm
+rsync -a --exclude-from=.gitignore --exclude=.git --exclude=.env \
+  ./ root@77.222.38.191:/opt/crm/
 ```
 
 Потом на сервере: `cd /opt/crm`
@@ -163,11 +182,83 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 ---
 
-## HTTPS (позже, когда будете готовы)
+## HTTPS
 
-1. Поставить certbot / Caddy на 443.  
-2. В `.env`: `USE_HTTPS=True` и `https://` в CORS/CSRF.  
-3. Перезапустить compose.
+`docker-compose.yml` mounts `nginx/https.conf` by default — that's the
+config with TLS on :443, and it's what a server that already has a
+certificate needs on every deploy. It refuses to start at all without a real
+certificate on disk, though, so a **brand-new** server needs a one-time
+bootstrap before it can use it:
+
+0. **Только для нового сервера, где сертификата ещё нет.** Временно
+   переключите nginx на `nginx/http.conf` (без TLS, не требует сертификата)
+   — в `docker-compose.yml`, в сервисе `nginx`:
+
+   ```diff
+   -      - ./nginx/https.conf:/etc/nginx/conf.d/default.conf:ro
+   +      - ./nginx/http.conf:/etc/nginx/conf.d/default.conf:ro
+   ```
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-deps --force-recreate nginx
+   ```
+
+   Если сертификат уже есть (сервер когда-то уже проходил этот шаг) —
+   пропустите этот пункт, ничего не трогайте, конфиг и так `https.conf`.
+
+1. Получить сертификат через certbot в режиме webroot — он положит файлы
+   проверки в общий volume `certbot-webroot`, который `http.conf` уже отдаёт
+   по адресу `/.well-known/acme-challenge/`:
+
+   ```bash
+   cd /opt/crm
+   docker run --rm \
+     -v crm_certbot-webroot:/var/www/certbot \
+     -v /etc/letsencrypt:/etc/letsencrypt \
+     certbot/certbot certonly --webroot -w /var/www/certbot \
+     -d crmdetroid.ru -d www.crmdetroid.ru \
+     --email вы@почта.ru --agree-tos --no-eff-email
+   ```
+
+   Имя volume зависит от имени папки проекта (`docker compose` подставляет
+   префикс сам) — если команда не находит volume, уточните его через
+   `docker volume ls | grep certbot-webroot`.
+
+2. Вернуть nginx на TLS-конфиг — отменить правку шага 0 (или, если правили
+   вручную, просто `git checkout docker-compose.yml`, раз `https.conf` и так
+   в git default):
+
+   ```diff
+   -      - ./nginx/http.conf:/etc/nginx/conf.d/default.conf:ro
+   +      - ./nginx/https.conf:/etc/nginx/conf.d/default.conf:ro
+   ```
+
+3. В `.env` выставить `USE_HTTPS=True`, а в `CORS_ALLOWED_ORIGINS` /
+   `CSRF_TRUSTED_ORIGINS` — варианты с `https://` вместо `http://`.
+
+4. Пересобрать/перезапустить:
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build backend nginx
+   ```
+
+5. Проверить: https://crmdetroid.ru/login должен открываться, http:// —
+   редиректить на https (это уже в `nginx/https.conf`).
+
+**Важно на будущее:** не оставляйте `http.conf` смонтированным дольше, чем
+на время самого бутстрапа. Если он попадёт в `docker-compose.yml` как
+постоянная правка и её потом случайно задеплоят на уже работающий по HTTPS
+сервер — `deploy.sh`/`git reset --hard` в следующий раз молча выключит
+рабочий HTTPS (это уже реально один раз произошло при обкатке этой самой
+процедуры). `https.conf` — это то, что должно быть закоммичено как дефолт
+всегда, кроме как на те несколько минут, что нужны на выпуск первого
+сертификата.
+
+Продление: сертификаты Let's Encrypt живут 90 дней. Повторяйте команду из
+шага 1 (certbot сам обновит файл на месте) по крону раз в месяц-два, затем
+`docker compose up -d --no-deps --force-recreate nginx`, чтобы nginx перечитал
+обновлённый файл.
+
 
 ---
 
@@ -176,11 +267,25 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 На сервере от root (после настройки пользователя `deploy`):
 
 ```bash
-sudo -iu deploy /opt/crm/deploy.sh
-sudo -iu deploy /opt/crm/deploy.sh arena/01a0d6dd-odoo
+sudo -iu deploy /opt/crm/deploy.sh                  # перевыкатывает уже развёрнутую ветку
+sudo -iu deploy /opt/crm/deploy.sh <ваша-ветка>     # или явно переключиться на другую
 ```
 
+Без аргумента скрипт берёт ту ветку, которая уже стоит в `/opt/crm` (`git rev-parse
+--abbrev-ref HEAD`) — то есть просто повторяет тот же релиз с учётом новых коммитов.
+Он никогда не откатывает вас на ветку одной из прошлых сессий молча: если ветку не
+удалось определить, скрипт остановится с ошибкой, а не задеплоит что-то произвольное.
+
 Скрипт: fetch + `reset --hard` на ветку, **`.env` сохраняет**, `docker compose up -d --build`, ждёт backend, поднимает nginx.
+
+Перед миграциями скрипт снимает бэкап через уже развёрнутый (не новый) образ
+`backend`. Если именно бэкап сломан прямо в этом образе — релиз, который его
+чинит, не сможет пройти сам через себя. На этот случай: сделайте бэкап
+вручную и повторите с `DEPLOY_SKIP_BACKUP=1`:
+
+```bash
+sudo -iu deploy env DEPLOY_SKIP_BACKUP=1 /opt/crm/deploy.sh <ваша-ветка>
+```
 
 **Один раз** (root):
 

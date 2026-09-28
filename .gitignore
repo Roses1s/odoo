@@ -3,3 +3,18 @@ node_modules/
 
 # Build artifacts
 *.tsbuildinfo
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local scratch Postgres used to run backend tests without Docker
+backend/.pgdata/
+
+# Secrets — .env holds real credentials once filled in from .env.example;
+# it must never be `git add -A`-ed by mistake (see DEPLOY.md, Step Г/Д).
+.env
+.env.*
+!.env.example

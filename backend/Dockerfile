@@ -28,7 +28,7 @@ RUN pip install --upgrade pip && pip install -r /app/requirements.txt
 
 COPY . /app
 
-RUN chmod +x /app/scripts/backup.sh /app/entrypoint.sh || true
+RUN chmod +x /app/scripts/backup.sh /app/scripts/restore.sh /app/entrypoint.sh || true
 
 EXPOSE 8000
 

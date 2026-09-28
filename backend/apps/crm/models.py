@@ -83,6 +83,11 @@ class Lead(TimeStampedModel):
         indexes = [
             models.Index(fields=["is_archived", "stage"], name="crm_lead_arch_stage_idx"),
             models.Index(fields=["name"], name="crm_lead_name_idx"),
+            # Backs both the default list ordering and the pager's "who comes
+            # right before/after this lead" range queries.
+            models.Index(
+                fields=["is_archived", "-created_at", "-id"], name="crm_lead_pager_idx"
+            ),
             GinIndex(
                 fields=["name"],
                 name="crm_lead_name_trgm_idx",

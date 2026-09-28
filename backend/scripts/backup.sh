@@ -11,12 +11,17 @@ MEDIA_TMP=".${MEDIA_FILENAME}.tmp"
 
 mkdir -p "$BACKUP_DIR"
 export PGPASSWORD="${POSTGRES_PASSWORD:-}"
+# pg_dump has no --statement-timeout flag of its own (that's a server-side
+# GUC, not a pg_dump CLI option -- passing it as one fails immediately with
+# "unrecognized option" before anything is dumped). The correct way to apply
+# it to the dump's own connection is via PGOPTIONS, same as any other libpq
+# client-side setting.
+export PGOPTIONS="-c statement_timeout=${BACKUP_STATEMENT_TIMEOUT:-30min}"
 trap 'rm -f "$BACKUP_DIR/$TMP_FILENAME" "$BACKUP_DIR/$MEDIA_TMP"' EXIT
 
 # Write atomically: an interrupted pg_dump must never look like a valid backup.
 # statement_timeout guards against a hung dump blocking the nightly job forever.
 pg_dump -h "${POSTGRES_HOST:-db}" -U "${POSTGRES_USER:-crm_user}" -d "${POSTGRES_DB:-crm_db}" \
-  --statement-timeout="${BACKUP_STATEMENT_TIMEOUT:-30min}" \
   | gzip > "${BACKUP_DIR}/${TMP_FILENAME}"
 
 gzip -t "${BACKUP_DIR}/${TMP_FILENAME}"

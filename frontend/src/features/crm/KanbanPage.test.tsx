@@ -162,7 +162,11 @@ describe("lead load failure", () => {
     const realImpl = get.getMockImplementation();
     if (!realImpl) throw new Error("api.get mock has no implementation");
     const failing = (url: string) =>
-      url.startsWith("/crm/leads") ? Promise.reject({ response: { status: 500, data: { detail: "Не удалось загрузить лиды." } } }) : realImpl(url);
+      url.startsWith("/crm/leads")
+        ? Promise.reject({
+            response: { status: 500, data: { detail: "Не удалось загрузить лиды." } },
+          })
+        : realImpl(url);
 
     get.mockImplementation(failing);
     try {
@@ -213,5 +217,54 @@ describe("kanban column paging", () => {
 
     expect(screen.getByText(/Лид 21 —/)).toBeTruthy();
     expect(screen.queryByText(/Лид 41 —/)).toBeNull();
+  });
+});
+
+describe("lead fetch ceiling", () => {
+  it("stops after a bounded number of pages and says so instead of pulling everything", async () => {
+    // A filter that matches thousands of leads used to mean an unbounded
+    // number of page_size=500 requests and as many fully serialised leads
+    // sitting in memory. There's now a hard ceiling (see MAX_FETCH_PAGES in
+    // KanbanPage.tsx) and a banner instead of a silent, ever-growing fetch.
+    const client = await import("@/shared/api/client");
+    const get = client.api.get as ReturnType<typeof vi.fn>;
+    const realImpl = get.getMockImplementation();
+    if (!realImpl) throw new Error("api.get mock has no implementation");
+
+    const TOTAL = 2500;
+    const PAGE_SIZE = 500;
+    const hugeLeadSet: Lead[] = Array.from({ length: TOTAL }, (_, i) => ({
+      ...LEADS[0],
+      id: 100_000 + i,
+      name: `Большой ${i + 1}`,
+    }));
+
+    const paged = (url: string) => {
+      if (!url.startsWith("/crm/leads")) return realImpl(url);
+      const page = Number(new URL(url, "http://localhost").searchParams.get("page") || "1");
+      const start = (page - 1) * PAGE_SIZE;
+      const results = hugeLeadSet.slice(start, start + PAGE_SIZE);
+      const next =
+        start + PAGE_SIZE < TOTAL
+          ? `/api/crm/leads/?page_size=${PAGE_SIZE}&page=${page + 1}`
+          : null;
+      return Promise.resolve({ data: { results, next, count: TOTAL } });
+    };
+
+    get.mockClear();
+    get.mockImplementation(paged);
+    try {
+      renderAt("/crm?view=list");
+      await waitFor(() =>
+        expect(screen.getByText(/Показаны первые 2000 из 2500 лидов/)).toBeTruthy(),
+      );
+      // Four pages of 500 — not a fifth, and definitely not "keep going".
+      const leadCalls = get.mock.calls.filter((call: unknown[]) =>
+        String(call[0]).startsWith("/crm/leads"),
+      );
+      expect(leadCalls).toHaveLength(4);
+    } finally {
+      get.mockImplementation(realImpl);
+    }
   });
 });

@@ -70,23 +70,26 @@ export function LeadFormPage() {
   });
 
   // Record pager ("N / M" with prev/next), like the Odoo control panel.
+  // A dedicated endpoint reports position/total/neighbours without pulling
+  // hundreds of fully serialised leads just to read off an id column.
   const pagerQ = useQuery({
-    queryKey: ["leads-pager"],
+    queryKey: ["lead-pager", id],
     enabled: !isNew,
-    staleTime: 60_000,
-    queryFn: async () => {
-      const { data } = await api.get("/crm/leads/?page_size=500");
-      const rows = unwrapList<Lead>(data);
-      const total =
-        data && typeof data === "object" && "count" in data
-          ? Number((data as { count: number }).count)
-          : rows.length;
-      return { ids: rows.map((l) => l.id), total };
-    },
+    staleTime: 15_000,
+    queryFn: async () =>
+      (
+        await api.get<{
+          position: number;
+          total: number;
+          prev_id: number | null;
+          next_id: number | null;
+        }>(`/crm/leads/${id}/pager/`)
+      ).data,
   });
-  const pagerIds = pagerQ.data?.ids ?? [];
-  const pagerTotal = pagerQ.data?.total ?? pagerIds.length;
-  const pagerIndex = pagerIds.indexOf(Number(id));
+  const pagerPosition = pagerQ.data?.position ?? 0;
+  const pagerTotal = pagerQ.data?.total ?? 0;
+  const pagerPrevId = pagerQ.data?.prev_id ?? null;
+  const pagerNextId = pagerQ.data?.next_id ?? null;
 
   // Load the record once: never overwrite unsaved edits on background refetches.
   useEffect(() => {
@@ -342,17 +345,17 @@ export function LeadFormPage() {
           ) : null
         }
         pager={
-          !isNew && pagerIndex >= 0 ? (
+          !isNew && pagerQ.data ? (
             <span className="mr-1 flex items-center gap-1">
               <span className="whitespace-nowrap text-[13px] text-odoo-text-muted [font-variant-numeric:tabular-nums]">
-                {pagerIndex + 1} / {pagerTotal}
+                {pagerPosition} / {pagerTotal}
               </span>
               <span className="inline-flex h-7 overflow-hidden rounded-[4px] border border-odoo-border bg-odoo-surface">
                 <button
                   type="button"
                   aria-label="Предыдущий лид"
-                  disabled={pagerIndex <= 0}
-                  onClick={() => navigate(`/crm/leads/${pagerIds[pagerIndex - 1]}`)}
+                  disabled={!pagerPrevId}
+                  onClick={() => pagerPrevId && navigate(`/crm/leads/${pagerPrevId}`)}
                   className="inline-flex w-7 items-center justify-center text-odoo-text-muted transition-colors hover:bg-odoo-bg disabled:opacity-40"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -360,8 +363,8 @@ export function LeadFormPage() {
                 <button
                   type="button"
                   aria-label="Следующий лид"
-                  disabled={pagerIndex >= pagerIds.length - 1}
-                  onClick={() => navigate(`/crm/leads/${pagerIds[pagerIndex + 1]}`)}
+                  disabled={!pagerNextId}
+                  onClick={() => pagerNextId && navigate(`/crm/leads/${pagerNextId}`)}
                   className="inline-flex w-7 items-center justify-center border-l border-odoo-border text-odoo-text-muted transition-colors hover:bg-odoo-bg disabled:opacity-40"
                 >
                   <ChevronRight className="h-4 w-4" />

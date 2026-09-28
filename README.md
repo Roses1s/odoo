@@ -75,6 +75,7 @@ cd e2e && npx playwright test
 ```
 backend/apps/{users,core,launcher,crm,shipments,notifications}
 frontend/src/{app,features,shared}
-nginx/default.conf
+nginx/http.conf   (по умолчанию, без TLS)
+nginx/https.conf  (с TLS, см. DEPLOY.md)
 docker-compose.yml
 ```

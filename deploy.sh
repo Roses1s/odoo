@@ -1,12 +1,31 @@
 #!/bin/bash
 # Выкат:  sudo -iu deploy /opt/crm/deploy.sh
-#         sudo -iu deploy /opt/crm/deploy.sh arena/01a0d6dd-odoo
+#         sudo -iu deploy /opt/crm/deploy.sh имя-ветки
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 cd "$ROOT"
 
-BRANCH="${1:-${DEPLOY_BRANCH:-arena/01a0d6dd-odoo}}"
+if [[ ! -d .git ]]; then
+  echo "Нет git-репозитория в $ROOT"
+  exit 1
+fi
+
+# Without an explicit branch this used to fall back to whatever branch was
+# hardcoded here at the time — a name from one specific past session, not a
+# real default. Deploying without an argument redeployed a stale snapshot
+# nobody meant to ship. The only default that stays correct over time is
+# "whatever is already checked out on this server": that's what a bare
+# re-run should reapply.
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+BRANCH="${1:-${DEPLOY_BRANCH:-$CURRENT_BRANCH}}"
+
+if [[ -z "$BRANCH" || "$BRANCH" == "HEAD" ]]; then
+  echo "Не удалось определить ветку для выката." >&2
+  echo "Передайте её явно: $0 <ветка>  (или задайте DEPLOY_BRANCH)." >&2
+  exit 1
+fi
+
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
 
 echo "==> $(whoami) @ $ROOT"
@@ -17,11 +36,6 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-if [[ ! -d .git ]]; then
-  echo "Нет git-репозитория в $ROOT"
-  exit 1
-fi
-
 ENV_BAK="$(mktemp /tmp/crm.env.XXXXXX)"
 cp -a .env "$ENV_BAK"
 trap 'cp -a "$ENV_BAK" "$ROOT/.env"; rm -f "$ENV_BAK"' EXIT
@@ -29,10 +43,22 @@ trap 'cp -a "$ENV_BAK" "$ROOT/.env"; rm -f "$ENV_BAK"' EXIT
 # Migrations run inside the backend entrypoint, before the readiness probe.
 # If one of them fails halfway the schema is already changed, so take a copy
 # first — and stop the release if that copy cannot be made.
-if "${COMPOSE[@]}" ps --services --filter status=running 2>/dev/null | grep -qx backend; then
+#
+# This runs against the *currently running* backend container, i.e. whatever
+# image the previous release built — not the new code about to be deployed.
+# If backup.sh itself has a bug, every future release is blocked forever,
+# since a fix to backup.sh can never pass its own broken precondition to get
+# deployed. DEPLOY_SKIP_BACKUP=1 is the deliberate way out of that: take a
+# manual backup yourself first, then set it for this one release only.
+if [[ "${DEPLOY_SKIP_BACKUP:-0}" == "1" ]]; then
+  echo "==> DEPLOY_SKIP_BACKUP=1 — бэкап перед миграциями пропущен НАМЕРЕННО."
+  echo "    Убедитесь, что свежая резервная копия уже есть."
+elif "${COMPOSE[@]}" ps --services --filter status=running 2>/dev/null | grep -qx backend; then
   echo "==> бэкап перед миграциями"
   if ! "${COMPOSE[@]}" exec -T backend /app/scripts/backup.sh; then
     echo "ОШИБКА: бэкап не создан. Релиз остановлен, ничего не изменено." >&2
+    echo "Если бэкап сломан в уже развёрнутом образе, а чинит его как раз" >&2
+    echo "этот релиз: сделайте бэкап вручную и повторите с DEPLOY_SKIP_BACKUP=1." >&2
     exit 1
   fi
 else
