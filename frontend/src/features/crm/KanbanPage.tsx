@@ -133,7 +133,7 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
         </div>
         <span
           title={lead.assigned_to_email || "Не назначен"}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-odoo-primary text-[9px] font-semibold text-white"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-odoo-primary text-[9px] font-semibold text-white"
         >
           {initials(lead.assigned_to_email)}
         </span>
@@ -421,7 +421,7 @@ function Column({
       </div>
       <div
         ref={setNodeRef}
-        className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${isOver ? "bg-[#f4f7fb]" : "bg-white"}`}
+        className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable] ${isOver ? "bg-[#f4f7fb]" : "bg-white"}`}
       >
         <SortableContext items={leads.map((l) => `lead-${l.id}`)} strategy={verticalListSortingStrategy}>
           {loading ? Array.from({ length: 3 }).map((_, i) => <KanbanCardSkeleton key={i} />) : leads.map((lead) => <LeadCard key={lead.id} lead={lead} />)}
@@ -724,7 +724,7 @@ export function KanbanPage() {
       )}
 
       {view !== "list" && (
-      <div className="flex h-[calc(100vh-94px)] snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden border-t border-odoo-border-light bg-white md:snap-none">
+      <div className="flex h-[calc(100dvh-90px)] min-h-0 snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden overscroll-x-contain border-t border-odoo-border-light bg-white md:snap-none">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragCancel={() => setActiveLead(null)} onDragEnd={onDragEnd}>
           {group === "stage"
             ? stages.map((stage) => (
@@ -744,7 +744,7 @@ export function KanbanPage() {
                   <div className="mb-2 text-[13px] font-semibold">
                     {col.title} <span className="font-normal text-odoo-text-muted">{col.items.length}</span>
                   </div>
-                  <div className="flex min-h-0 flex-1 flex-col bg-white">
+                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-white [scrollbar-gutter:stable]">
                     {col.items.map((lead) => (
                       <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="overflow-hidden border-b border-odoo-border-light bg-white px-2.5 py-2 hover:bg-[#faf8f9]">
                         <LeadCardBody lead={lead} />

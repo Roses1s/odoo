@@ -45,7 +45,7 @@ export function ControlPanel({
   onView?: (v: "kanban" | "list") => void;
 }) {
   return (
-    <div className="sticky top-12 z-30 border-b border-odoo-border-light bg-white">
+    <div className="sticky top-10 z-30 shrink-0 border-b border-odoo-border-light bg-white">
       <div className="relative flex min-h-[50px] flex-wrap items-center gap-2 px-3 py-1 md:flex-nowrap md:py-0">
         {onCreate && (
           <button
