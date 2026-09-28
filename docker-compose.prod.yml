@@ -16,6 +16,7 @@ services:
       RUN_MIGRATIONS: "0"
     volumes:
       - backups:/backups
+      - media:/app/media:ro
 
   celery_beat:
     environment:

@@ -161,7 +161,11 @@ class BackupListView(APIView):
         directory = Path(getattr(settings, "BACKUP_DIR", "/backups"))
         if not directory.exists():
             return Response({"results": []})
-        files = sorted(directory.glob("crm_db_*.sql.gz"), reverse=True)
+        files = sorted(
+            [*directory.glob("crm_db_*.sql.gz"), *directory.glob("crm_media_*.tar.gz")],
+            key=lambda f: f.name,
+            reverse=True,
+        )
         results = [
             {
                 "name": f.name,

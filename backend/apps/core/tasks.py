@@ -12,6 +12,7 @@ def daily_backup() -> str:
     env = os.environ.copy()
     env.setdefault("BACKUP_DIR", getattr(settings, "BACKUP_DIR", "/backups"))
     env.setdefault("BACKUP_RETENTION_DAYS", str(getattr(settings, "BACKUP_RETENTION_DAYS", 30)))
+    env.setdefault("MEDIA_DIR", str(getattr(settings, "MEDIA_ROOT", "/app/media")))
     for key in ("POSTGRES_HOST", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB"):
         val = os.environ.get(key) or env.get(key)
         if val:
