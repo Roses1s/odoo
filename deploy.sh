@@ -43,10 +43,22 @@ trap 'cp -a "$ENV_BAK" "$ROOT/.env"; rm -f "$ENV_BAK"' EXIT
 # Migrations run inside the backend entrypoint, before the readiness probe.
 # If one of them fails halfway the schema is already changed, so take a copy
 # first — and stop the release if that copy cannot be made.
-if "${COMPOSE[@]}" ps --services --filter status=running 2>/dev/null | grep -qx backend; then
+#
+# This runs against the *currently running* backend container, i.e. whatever
+# image the previous release built — not the new code about to be deployed.
+# If backup.sh itself has a bug, every future release is blocked forever,
+# since a fix to backup.sh can never pass its own broken precondition to get
+# deployed. DEPLOY_SKIP_BACKUP=1 is the deliberate way out of that: take a
+# manual backup yourself first, then set it for this one release only.
+if [[ "${DEPLOY_SKIP_BACKUP:-0}" == "1" ]]; then
+  echo "==> DEPLOY_SKIP_BACKUP=1 — бэкап перед миграциями пропущен НАМЕРЕННО."
+  echo "    Убедитесь, что свежая резервная копия уже есть."
+elif "${COMPOSE[@]}" ps --services --filter status=running 2>/dev/null | grep -qx backend; then
   echo "==> бэкап перед миграциями"
   if ! "${COMPOSE[@]}" exec -T backend /app/scripts/backup.sh; then
     echo "ОШИБКА: бэкап не создан. Релиз остановлен, ничего не изменено." >&2
+    echo "Если бэкап сломан в уже развёрнутом образе, а чинит его как раз" >&2
+    echo "этот релиз: сделайте бэкап вручную и повторите с DEPLOY_SKIP_BACKUP=1." >&2
     exit 1
   fi
 else

@@ -252,6 +252,15 @@ sudo -iu deploy /opt/crm/deploy.sh <ваша-ветка>     # или явно �
 
 Скрипт: fetch + `reset --hard` на ветку, **`.env` сохраняет**, `docker compose up -d --build`, ждёт backend, поднимает nginx.
 
+Перед миграциями скрипт снимает бэкап через уже развёрнутый (не новый) образ
+`backend`. Если именно бэкап сломан прямо в этом образе — релиз, который его
+чинит, не сможет пройти сам через себя. На этот случай: сделайте бэкап
+вручную и повторите с `DEPLOY_SKIP_BACKUP=1`:
+
+```bash
+sudo -iu deploy env DEPLOY_SKIP_BACKUP=1 /opt/crm/deploy.sh <ваша-ветка>
+```
+
 **Один раз** (root):
 
 ```bash
