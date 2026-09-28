@@ -4,8 +4,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme tokens.
+ *
+ * Every odoo.* colour in tailwind.config.ts resolves to one of these
+ * variables, so switching the theme repaints the whole app without touching
+ * component markup — the same layering Odoo uses for its dark mode, where a
+ * variables file is loaded before the default one.
+ *
+ * Light values are the exact colours the app shipped with: the light theme
+ * must stay pixel-identical. src/shared/lib/palette.test.ts guards that.
+ * Dark values are taken from the reference Odoo dark screenshots.
+ */
 @layer base {
   :root {
+    color-scheme: light;
+
+    --odoo-primary: 113 75 103; /* #714B67 */
+    --odoo-primary-hover: 91 58 82; /* #5B3A52 */
+    --odoo-secondary: 0 160 157; /* #00A09D */
+
+    --odoo-bg: 248 249 250; /* #F8F9FA */
+    --odoo-surface: 255 255 255; /* #FFFFFF */
+    --odoo-surface-hover: 250 248 249; /* #faf8f9 */
+    --odoo-surface-sunken: 238 236 238; /* #eeecee */
+    --odoo-column-head: 250 249 250; /* #faf9fa */
+    --odoo-track: 222 220 223; /* #dedcdf */
+
+    --odoo-border: 222 226 230; /* #DEE2E6 */
+    --odoo-border-light: 233 236 239; /* #E9ECEF */
+
+    --odoo-text: 33 37 41; /* #212529 */
+    --odoo-text-soft: 73 80 87; /* #495057 */
+    --odoo-text-muted: 108 117 125; /* #6C757D */
+    --odoo-text-light: 173 181 189; /* #ADB5BD */
+
+    --odoo-success: 40 167 69; /* #28A745 */
+    --odoo-warning: 255 193 7; /* #FFC107 */
+    --odoo-danger: 220 53 69; /* #DC3545 */
+    --odoo-info: 23 162 184; /* #17A2B8 */
+
+    /* Contextual tokens: colours that used to be written inline. */
+    --odoo-title-band: 253 239 241; /* #fdeff1 */
+    --odoo-statusbar: 222 226 230; /* #DEE2E6 */
+    --odoo-statusbar-text: 73 80 87; /* #495057 */
+    --odoo-drop: 244 247 251; /* #f4f7fb */
+    --odoo-accent-soft: 233 242 242; /* #e9f2f2 */
+    --odoo-accent-line: 143 185 184; /* #8FB9B8 */
+    --odoo-search-divider: 200 216 216; /* #c8d8d8 */
+    --odoo-search-icon: 95 107 112; /* #5f6b70 */
+    --odoo-search-placeholder: 139 147 151; /* #8b9397 */
+    --odoo-search-action: 78 92 97; /* #4e5c61 */
+    --odoo-search-action-hover: 244 247 247; /* #f4f7f7 */
+    --odoo-chip: 238 234 234; /* #eeeaea */
+    --odoo-chip-text: 111 102 106; /* #6f666a */
+    --odoo-avatar: 75 75 85; /* #4b4b55 */
+    --odoo-link: 0 160 157; /* #00A09D */
+
     --background: 210 17% 98%;
     --foreground: 210 11% 15%;
     --card: 0 0% 100%;
@@ -29,6 +84,48 @@
   }
 
   .dark {
+    color-scheme: dark;
+
+    --odoo-primary: 130 86 118; /* lifted so filled buttons keep their weight */
+    --odoo-primary-hover: 150 100 137;
+    --odoo-secondary: 0 176 173;
+
+    --odoo-bg: 27 28 31;
+    --odoo-surface: 43 44 48;
+    --odoo-surface-hover: 51 52 57;
+    --odoo-surface-sunken: 35 36 40;
+    --odoo-column-head: 39 40 45;
+    --odoo-track: 58 59 64;
+
+    --odoo-border: 53 54 59;
+    --odoo-border-light: 47 48 53;
+
+    --odoo-text: 228 228 230;
+    --odoo-text-soft: 200 200 204;
+    --odoo-text-muted: 154 154 160;
+    --odoo-text-light: 111 112 118;
+
+    --odoo-success: 61 184 94;
+    --odoo-warning: 255 193 7;
+    --odoo-danger: 232 87 101;
+    --odoo-info: 54 183 205;
+
+    --odoo-title-band: 61 47 58;
+    --odoo-statusbar: 53 54 59;
+    --odoo-statusbar-text: 200 200 204;
+    --odoo-drop: 38 49 61;
+    --odoo-accent-soft: 34 52 54;
+    --odoo-accent-line: 61 110 109;
+    --odoo-search-divider: 61 74 74;
+    --odoo-search-icon: 154 164 168;
+    --odoo-search-placeholder: 122 131 135;
+    --odoo-search-action: 176 194 196;
+    --odoo-search-action-hover: 42 56 57;
+    --odoo-chip: 58 52 56;
+    --odoo-chip-text: 201 195 203;
+    --odoo-avatar: 75 75 85;
+    --odoo-link: 106 176 232;
+
     --background: 220 10% 12%;
     --foreground: 210 17% 98%;
     --card: 220 10% 16%;
@@ -46,8 +143,8 @@
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 13px;
     line-height: 1.5;
-    color: #212529;
-    background: #f8f9fa;
+    color: rgb(var(--odoo-text));
+    background: rgb(var(--odoo-bg));
     -webkit-font-smoothing: antialiased;
   }
 
@@ -70,17 +167,12 @@
     letter-spacing: 0.5px;
   }
 
-  .dark body {
-    background: #1b1d21;
-    color: #e9ecef;
-  }
-
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #dee2e6;
+    background: rgb(var(--odoo-border));
     border-radius: 9999px;
   }
 }

@@ -18,7 +18,7 @@ export function Breadcrumb({ items }: { items: string[] }) {
 
 export function Toolbar({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-12 flex-wrap items-center gap-2 border-b border-odoo-border-light bg-white px-3 py-1.5">
+    <div className="flex min-h-12 flex-wrap items-center gap-2 border-b border-odoo-border-light bg-odoo-surface px-3 py-1.5">
       {children}
     </div>
   );
@@ -59,13 +59,13 @@ export function ControlPanel({
   count?: number;
 }) {
   return (
-    <div className="sticky top-10 z-30 shrink-0 border-b border-odoo-border-light bg-white">
+    <div className="sticky top-10 z-30 shrink-0 border-b border-odoo-border-light bg-odoo-surface">
       <div className="relative flex min-h-[50px] flex-wrap items-center gap-2 px-3 py-1 md:flex-nowrap md:py-0">
         {onCreate && (
           <button
             type="button"
             className="rounded-md px-3 py-1 text-[13px] font-medium text-white hover:opacity-90"
-            style={{ backgroundColor: "#714B67" }}
+            style={{ backgroundColor: "rgb(var(--odoo-primary))" }}
             onClick={onCreate}
           >
             Новый
@@ -75,7 +75,7 @@ export function ControlPanel({
           <button
             type="button"
             onClick={onNew}
-            className="inline-flex h-7 shrink-0 items-center rounded-[4px] border border-odoo-border bg-white px-3 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg"
+            className="inline-flex h-7 shrink-0 items-center rounded-[4px] border border-odoo-border bg-odoo-surface px-3 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg"
           >
             Новый
           </button>
@@ -127,20 +127,20 @@ export function ControlPanel({
         )}
         {onSearch && (
           <div className="pointer-events-none order-last flex w-full justify-center md:absolute md:inset-x-0 md:order-none md:w-auto">
-            <div className="pointer-events-auto flex h-9 w-full items-stretch overflow-hidden rounded-[3px] border border-[#8FB9B8] bg-white shadow-sm focus-within:ring-1 focus-within:ring-[#8FB9B8] md:w-[min(100%,600px)]">
+            <div className="pointer-events-auto flex h-9 w-full items-stretch overflow-hidden rounded-[3px] border border-odoo-accent-line bg-odoo-surface shadow-sm focus-within:ring-1 focus-within:ring-odoo-accent-line md:w-[min(100%,600px)]">
               <span className="flex items-center pl-3 pr-2">
-                <Search className="h-4 w-4 shrink-0 text-[#5f6b70]" />
+                <Search className="h-4 w-4 shrink-0 text-odoo-search-icon" />
               </span>
               <input
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
                 placeholder="Поиск..."
                 aria-label="Поиск лидов"
-                className="min-w-0 flex-1 bg-transparent pr-2 text-[14px] outline-none placeholder:text-[#8b9397]"
+                className="min-w-0 flex-1 bg-transparent pr-2 text-[14px] outline-none placeholder:text-odoo-search-placeholder"
               />
               <button
                 type="button"
-                className="flex w-9 shrink-0 items-center justify-center border-l border-[#c8d8d8] text-[#4e5c61] hover:bg-[#f4f7f7]"
+                className="flex w-9 shrink-0 items-center justify-center border-l border-odoo-search-divider text-odoo-search-action hover:bg-odoo-search-action-hover"
                 onClick={onSettings}
                 title="Параметры поиска"
                 aria-label="Параметры поиска"
@@ -161,10 +161,10 @@ export function ControlPanel({
             </span>
           )}
           {onView && (
-            <span className="mr-1 inline-flex h-8 overflow-hidden rounded-[3px] border border-odoo-border bg-white">
+            <span className="mr-1 inline-flex h-8 overflow-hidden rounded-[3px] border border-odoo-border bg-odoo-surface">
               <button
                 type="button"
-                className={`inline-flex w-8 items-center justify-center border-r border-odoo-border transition-colors ${view !== "list" ? "bg-[#e9f2f2] text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
+                className={`inline-flex w-8 items-center justify-center border-r border-odoo-border transition-colors ${view !== "list" ? "bg-odoo-accent-soft text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
                 onClick={() => onView("kanban")}
                 title="Канбан"
               >
@@ -172,7 +172,7 @@ export function ControlPanel({
               </button>
               <button
                 type="button"
-                className={`inline-flex w-8 items-center justify-center transition-colors ${view === "list" ? "bg-[#e9f2f2] text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
+                className={`inline-flex w-8 items-center justify-center transition-colors ${view === "list" ? "bg-odoo-accent-soft text-odoo-primary" : "text-odoo-text-muted hover:bg-odoo-bg"}`}
                 onClick={() => onView("list")}
                 title="Список"
               >

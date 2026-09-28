@@ -74,7 +74,7 @@ export function ShipmentsPage() {
             {(data ?? []).map((s) => {
               const st = STATUS[s.status] ?? STATUS.new;
               return (
-                <tr key={s.id} className="h-10 border-b border-odoo-border-light bg-white hover:bg-odoo-bg">
+                <tr key={s.id} className="h-10 border-b border-odoo-border-light bg-odoo-surface hover:bg-odoo-bg">
                   <td className="p-2">
                     <Link className="text-odoo-primary" to={`/shipments/${s.id}`}>
                       {s.id}

@@ -107,7 +107,7 @@ function TagsField({
         <span
           key={tag.id}
           className={`inline-flex max-w-[220px] items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-[16px] ${
-            TAG_STYLES[tag.color] ?? "bg-[#eeeaea] text-[#6f666a]"
+            TAG_STYLES[tag.color] ?? "bg-odoo-chip text-odoo-chip-text"
           }`}
         >
           <span className="truncate" title={tag.name}>
@@ -136,7 +136,7 @@ function TagsField({
       {open && (
         <>
           <button type="button" className="fixed inset-0 z-10" aria-label="Закрыть" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-7 z-50 max-h-[220px] min-w-[200px] overflow-auto rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg">
+          <div className="absolute left-0 top-7 z-50 max-h-[220px] min-w-[200px] overflow-auto rounded-[3px] border border-odoo-border bg-odoo-surface py-1 shadow-lg">
             {rest.map((tag) => (
               <button
                 key={tag.id}
@@ -467,13 +467,13 @@ export function LeadFormPage() {
             <table className="w-full border-collapse text-[13px] [font-variant-numeric:tabular-nums]">
               <thead>
                 <tr>
-                  <th className="w-[80px] bg-odoo-bg px-2 py-1.5 pl-4 text-left font-medium text-odoo-text shadow-[inset_0_-1px_0_#DEE2E6] lg:pl-6">
+                  <th className="w-[80px] bg-odoo-bg px-2 py-1.5 pl-4 text-left font-medium text-odoo-text shadow-[inset_0_-1px_0_rgb(var(--odoo-border))] lg:pl-6">
                     №
                   </th>
-                  <th className="bg-odoo-bg px-2 py-1.5 text-left font-medium text-odoo-text shadow-[inset_0_-1px_0_#DEE2E6]">
+                  <th className="bg-odoo-bg px-2 py-1.5 text-left font-medium text-odoo-text shadow-[inset_0_-1px_0_rgb(var(--odoo-border))]">
                     Маршрут
                   </th>
-                  <th className="w-[180px] bg-odoo-bg px-2 py-1.5 pr-4 text-left font-medium text-odoo-text shadow-[inset_0_-1px_0_#DEE2E6] lg:pr-6">
+                  <th className="w-[180px] bg-odoo-bg px-2 py-1.5 pr-4 text-left font-medium text-odoo-text shadow-[inset_0_-1px_0_rgb(var(--odoo-border))] lg:pr-6">
                     Статус
                   </th>
                 </tr>
@@ -487,7 +487,7 @@ export function LeadFormPage() {
                   </tr>
                 )}
                 {shipments.map((s) => (
-                  <tr key={s.id} className="border-b border-odoo-border-light hover:bg-[#faf8f9]">
+                  <tr key={s.id} className="border-b border-odoo-border-light hover:bg-odoo-surface-hover">
                     <td className="px-2 py-1 pl-4 lg:pl-6">
                       <Link className="text-odoo-primary hover:underline" to={`/shipments/${s.id}`}>
                         {s.id}
@@ -550,7 +550,7 @@ export function LeadFormPage() {
                     aria-label="Закрыть"
                     onClick={() => setActionsOpen(false)}
                   />
-                  <div className="absolute left-0 top-6 z-50 min-w-[180px] rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg">
+                  <div className="absolute left-0 top-6 z-50 min-w-[180px] rounded-[3px] border border-odoo-border bg-odoo-surface py-1 shadow-lg">
                     <button
                       type="button"
                       disabled={archive.isPending}
@@ -573,7 +573,7 @@ export function LeadFormPage() {
             <button
               type="button"
               onClick={() => notebookRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-              className="inline-flex h-[34px] items-center gap-2 rounded-[4px] border border-odoo-border bg-white px-2.5 transition-colors hover:bg-odoo-bg"
+              className="inline-flex h-[34px] items-center gap-2 rounded-[4px] border border-odoo-border bg-odoo-surface px-2.5 transition-colors hover:bg-odoo-bg"
             >
               <FileText className="h-4 w-4 text-odoo-text-muted" />
               <span className="flex flex-col items-start leading-[13px]">
@@ -589,7 +589,7 @@ export function LeadFormPage() {
               <span className="whitespace-nowrap text-[13px] text-odoo-text-muted [font-variant-numeric:tabular-nums]">
                 {pagerIndex + 1} / {pagerTotal}
               </span>
-              <span className="inline-flex h-7 overflow-hidden rounded-[4px] border border-odoo-border bg-white">
+              <span className="inline-flex h-7 overflow-hidden rounded-[4px] border border-odoo-border bg-odoo-surface">
                 <button
                   type="button"
                   aria-label="Предыдущий лид"
@@ -649,7 +649,7 @@ export function LeadFormPage() {
                             );
                             if (ok) archive.mutate();
                           }}
-                          className="h-[30px] rounded-[4px] border border-odoo-border bg-white px-3 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg disabled:opacity-60"
+                          className="h-[30px] rounded-[4px] border border-odoo-border bg-odoo-surface px-3 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg disabled:opacity-60"
                         >
                           Проигрыш
                         </button>
@@ -850,7 +850,7 @@ export function LeadFormPage() {
         </div>
 
         {!isNew && (
-          <div className="w-full shrink-0 bg-white lg:w-[33%] lg:max-w-[520px] lg:overflow-y-auto">
+          <div className="w-full shrink-0 bg-odoo-surface lg:w-[33%] lg:max-w-[520px] lg:overflow-y-auto">
             <Chatter
               timeline={timelineQ.data ?? []}
               onSubmit={(body, _mode, files) => noteMut.mutate({ body, files })}

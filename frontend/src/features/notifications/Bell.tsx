@@ -52,7 +52,7 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-80 rounded-md border border-odoo-border bg-white py-1 text-odoo-text shadow-lg">
+        <div className="absolute right-0 mt-2 w-80 rounded-md border border-odoo-border bg-odoo-surface py-1 text-odoo-text shadow-lg">
           <div className="px-3 py-1.5 text-xs font-semibold uppercase text-odoo-text-muted">Уведомления</div>
           {(list.data ?? []).slice(0, 15).map((n) => (
             <button

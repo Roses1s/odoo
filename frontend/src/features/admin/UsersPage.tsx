@@ -214,7 +214,7 @@ export function UsersPage() {
             <tr
               key={u.id}
               className={`h-10 border-b border-odoo-border-light hover:bg-odoo-bg ${
-                editing?.id === u.id ? "bg-odoo-bg" : "bg-white"
+                editing?.id === u.id ? "bg-odoo-bg" : "bg-odoo-surface"
               }`}
             >
               <td className="p-2 text-odoo-text-muted">{index + 1}</td>

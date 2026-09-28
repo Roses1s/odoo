@@ -12,7 +12,7 @@ export function Button({
     primary:
       "bg-odoo-primary text-white hover:bg-odoo-primary-hover",
     secondary:
-      "bg-white text-odoo-text border border-odoo-border hover:bg-odoo-bg",
+      "bg-odoo-surface text-odoo-text border border-odoo-border hover:bg-odoo-bg",
     danger: "bg-odoo-danger text-white hover:opacity-90",
     ghost: "text-odoo-text-muted hover:text-odoo-text hover:bg-odoo-bg",
   };

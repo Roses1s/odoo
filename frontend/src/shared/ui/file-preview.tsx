@@ -59,7 +59,7 @@ export function FilePreview({
         role="dialog"
         aria-modal="true"
         aria-label={`Просмотр файла ${file.name}`}
-        className="relative flex max-h-full w-full max-w-[900px] flex-col overflow-hidden rounded-[4px] border border-odoo-border bg-white shadow-lg"
+        className="relative flex max-h-full w-full max-w-[900px] flex-col overflow-hidden rounded-[4px] border border-odoo-border bg-odoo-surface shadow-lg"
       >
         <div className="flex items-center gap-2 border-b border-odoo-border-light px-3 py-2">
           <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-odoo-text" title={file.name}>
@@ -69,7 +69,7 @@ export function FilePreview({
           <button
             type="button"
             onClick={onDownload}
-            className="inline-flex h-7 items-center gap-1 rounded-[4px] border border-odoo-border bg-white px-2 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg"
+            className="inline-flex h-7 items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-surface px-2 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg"
           >
             <Download className="h-3.5 w-3.5" />
             Скачать
@@ -98,11 +98,11 @@ export function FilePreview({
           )}
 
           {!loading && !error && kind === "pdf" && url && (
-            <iframe src={url} title={file.name} className="h-[70vh] w-full border-0 bg-white" />
+            <iframe src={url} title={file.name} className="h-[70vh] w-full border-0 bg-odoo-surface" />
           )}
 
           {!loading && !error && kind === "text" && (
-            <pre className="whitespace-pre-wrap break-words rounded-[3px] bg-white p-3 text-[12px] leading-[18px] text-odoo-text">
+            <pre className="whitespace-pre-wrap break-words rounded-[3px] bg-odoo-surface p-3 text-[12px] leading-[18px] text-odoo-text">
               {text}
             </pre>
           )}

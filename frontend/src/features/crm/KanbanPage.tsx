@@ -99,7 +99,7 @@ function LeadCardBody({ lead, menuSpace = false }: { lead: Lead; menuSpace?: boo
             <span
               key={tag.id}
               title={tag.name}
-              className="inline-flex max-w-full items-center rounded-full bg-[#eeeaea] px-2 py-0.5 text-[11px] font-normal leading-[14px] text-[#6f666a]"
+              className="inline-flex max-w-full items-center rounded-full bg-odoo-chip px-2 py-0.5 text-[11px] font-normal leading-[14px] text-odoo-chip-text"
             >
               <span className="max-w-[150px] truncate">{tag.name}</span>
             </span>
@@ -139,12 +139,12 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
 
   const inner = (
     <div
-      className={`overflow-hidden border-b border-odoo-border-light bg-white px-2.5 py-2 ${
+      className={`overflow-hidden border-b border-odoo-border-light bg-odoo-surface px-2.5 py-2 ${
         isOverlay
           ? "w-[325px] cursor-grabbing rounded border border-odoo-primary shadow-lg"
           : isDragging
             ? "cursor-grabbing opacity-25"
-            : "cursor-grab hover:bg-[#faf8f9]"
+            : "cursor-grab hover:bg-odoo-surface-hover"
       }`}
     >
       <LeadCardBody lead={lead} menuSpace={!isOverlay} />
@@ -180,7 +180,7 @@ function LeadCard({ lead, isOverlay }: { lead: Lead; isOverlay?: boolean }) {
           </button>
           {menuOpen && (
             <div
-              className="absolute right-0 top-7 min-w-[110px] rounded border border-odoo-border bg-white py-1 shadow-lg"
+              className="absolute right-0 top-7 min-w-[110px] rounded border border-odoo-border bg-odoo-surface py-1 shadow-lg"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
@@ -227,13 +227,13 @@ function QuickCreate({ stageId, onDone }: { stageId: number; onDone: () => void 
   });
   return (
     <form
-      className="border-b border-odoo-border-light bg-white px-2.5 py-2"
+      className="border-b border-odoo-border-light bg-odoo-surface px-2.5 py-2"
       onSubmit={(e) => {
         e.preventDefault();
         if (name.trim() && inn.trim()) create.mutate();
       }}
     >
-      <div className="border border-[#8fb9b8] bg-white shadow-sm focus-within:ring-1 focus-within:ring-[#8fb9b8]">
+      <div className="border border-odoo-accent-line bg-odoo-surface shadow-sm focus-within:ring-1 focus-within:ring-odoo-accent-line">
         <input
           autoFocus
           className="block h-8 w-full border-b border-odoo-border-light px-2 text-[13px] outline-none placeholder:text-odoo-text-light"
@@ -306,7 +306,7 @@ function Column({
       <button
         type="button"
         onClick={onFold}
-        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-odoo-border-light bg-white py-3"
+        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-odoo-border-light bg-odoo-surface py-3"
         style={{ borderTop: `3px solid ${color}` }}
       >
         <span className="mt-8 origin-center rotate-180 text-[12px] font-semibold tracking-wide text-odoo-text [writing-mode:vertical-rl]">
@@ -317,8 +317,8 @@ function Column({
   }
 
   return (
-    <div className="flex h-full w-[min(100vw-1rem,325px)] shrink-0 snap-center flex-col border-r border-odoo-border-light bg-white md:w-[325px]">
-      <div className="shrink-0 bg-[#faf9fa] px-2.5 pb-2 pt-2">
+    <div className="flex h-full w-[min(100vw-1rem,325px)] shrink-0 snap-center flex-col border-r border-odoo-border-light bg-odoo-surface md:w-[325px]">
+      <div className="shrink-0 bg-odoo-column-head px-2.5 pb-2 pt-2">
         <div className="flex items-start justify-between gap-1">
           <div className="min-w-0">
             {editing && canManage ? (
@@ -345,7 +345,7 @@ function Column({
           <div className="relative flex items-center gap-px">
             <button
               type="button"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-[#eeecee] hover:text-odoo-text"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-odoo-surface-sunken hover:text-odoo-text"
               onClick={() => setQuick(true)}
               title="Добавить лид"
               aria-label="Добавить лид"
@@ -354,7 +354,7 @@ function Column({
             </button>
             <button
               type="button"
-              className="inline-flex h-6 w-5 items-center justify-center rounded-sm text-[17px] leading-none text-odoo-text-muted hover:bg-[#eeecee] hover:text-odoo-text"
+              className="inline-flex h-6 w-5 items-center justify-center rounded-sm text-[17px] leading-none text-odoo-text-muted hover:bg-odoo-surface-sunken hover:text-odoo-text"
               onClick={onFold}
               title="Свернуть"
               aria-label="Свернуть этап"
@@ -365,7 +365,7 @@ function Column({
               <>
                 <button
                   type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-[#eeecee] hover:text-odoo-text"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-odoo-text-muted hover:bg-odoo-surface-sunken hover:text-odoo-text"
                   onClick={() => setMenu((v) => !v)}
                   title="Меню этапа"
                   aria-label="Меню этапа"
@@ -373,7 +373,7 @@ function Column({
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
                 {menu && (
-                  <div className="absolute right-0 top-6 z-20 min-w-[200px] rounded border border-odoo-border bg-white py-1 shadow-lg">
+                  <div className="absolute right-0 top-6 z-20 min-w-[200px] rounded border border-odoo-border bg-odoo-surface py-1 shadow-lg">
                     <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => { setMenu(false); setEditing(true); }}>
                       Переименовать
                     </button>
@@ -410,7 +410,7 @@ function Column({
           </div>
         </div>
         <div className="mt-1 flex items-center gap-2">
-          <div className="h-2.5 w-[150px] overflow-hidden bg-[#dedcdf]">
+          <div className="h-2.5 w-[150px] overflow-hidden bg-odoo-track">
             <div
               className="h-full min-w-1"
               style={{
@@ -423,7 +423,7 @@ function Column({
       </div>
       <div
         ref={setNodeRef}
-        className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable] ${isOver ? "bg-[#f4f7fb]" : "bg-white"}`}
+        className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable] ${isOver ? "bg-odoo-drop" : "bg-odoo-surface"}`}
       >
         <SortableContext items={leads.map((l) => `lead-${l.id}`)} strategy={verticalListSortingStrategy}>
           {loading ? Array.from({ length: 3 }).map((_, i) => <KanbanCardSkeleton key={i} />) : leads.map((lead) => <LeadCard key={lead.id} lead={lead} />)}
@@ -433,7 +433,7 @@ function Column({
         ) : (
           <button
             type="button"
-            className="flex w-full items-center gap-1 px-2.5 py-2 text-left text-[13px] text-odoo-text-muted hover:bg-[#faf8f9] hover:text-odoo-text"
+            className="flex w-full items-center gap-1 px-2.5 py-2 text-left text-[13px] text-odoo-text-muted hover:bg-odoo-surface-hover hover:text-odoo-text"
             onClick={() => setQuick(true)}
           >
             <Plus className="h-3.5 w-3.5" /> Добавить
@@ -464,7 +464,7 @@ function ListTh({
   return (
     <th
       scope="col"
-      className={`sticky top-0 z-10 truncate bg-odoo-bg px-2 py-1.5 align-middle text-[13px] font-medium text-odoo-text shadow-[inset_0_-1px_0_#DEE2E6] ${
+      className={`sticky top-0 z-10 truncate bg-odoo-bg px-2 py-1.5 align-middle text-[13px] font-medium text-odoo-text shadow-[inset_0_-1px_0_rgb(var(--odoo-border))] ${
         numeric ? "text-right" : "text-left"
       } ${className}`}
     >
@@ -476,8 +476,8 @@ function ListTh({
 function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
   const navigate = useNavigate();
   return (
-    <div className="h-[calc(100dvh-90px)] min-h-0 overflow-auto overscroll-contain border-t border-odoo-border-light bg-white [scrollbar-gutter:stable]">
-      <table className="w-full min-w-[1180px] table-fixed border-collapse bg-white text-[13px] leading-[18px] text-odoo-text [font-variant-numeric:tabular-nums]">
+    <div className="h-[calc(100dvh-90px)] min-h-0 overflow-auto overscroll-contain border-t border-odoo-border-light bg-odoo-surface [scrollbar-gutter:stable]">
+      <table className="w-full min-w-[1180px] table-fixed border-collapse bg-odoo-surface text-[13px] leading-[18px] text-odoo-text [font-variant-numeric:tabular-nums]">
         <colgroup>
           <col />
           <col className="w-[120px]" />
@@ -512,7 +512,7 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
           {leads.map((lead) => (
             <tr
               key={lead.id}
-              className="cursor-pointer border-b border-odoo-border-light bg-white hover:bg-[#faf8f9]"
+              className="cursor-pointer border-b border-odoo-border-light bg-odoo-surface hover:bg-odoo-surface-hover"
               onClick={() => navigate(`/crm/leads/${lead.id}`)}
             >
               <td className="truncate px-2 py-1 pl-4" title={lead.name}>
@@ -529,7 +529,7 @@ function LeadListView({ leads, loading }: { leads: Lead[]; loading: boolean }) {
                       <span
                         key={tag.id}
                         title={tag.name}
-                        className="inline-block max-w-[110px] shrink-0 truncate rounded-full bg-[#eeeaea] px-2 py-0.5 text-[11px] font-normal leading-[14px] text-[#6f666a]"
+                        className="inline-block max-w-[110px] shrink-0 truncate rounded-full bg-odoo-chip px-2 py-0.5 text-[11px] font-normal leading-[14px] text-odoo-chip-text"
                       >
                         {tag.name}
                       </span>
@@ -577,7 +577,7 @@ function Dropdown({ label, children, active }: { label: string; children: React.
       {open && (
         <>
           <button type="button" className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-label="Закрыть" />
-          <div className="absolute left-0 z-50 mt-1 max-h-[360px] min-w-full overflow-y-auto rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg" onClick={() => setOpen(false)}>
+          <div className="absolute left-0 z-50 mt-1 max-h-[360px] min-w-full overflow-y-auto rounded-[3px] border border-odoo-border bg-odoo-surface py-1 shadow-lg" onClick={() => setOpen(false)}>
             {children}
           </div>
         </>
@@ -748,7 +748,7 @@ export function KanbanPage() {
         count={view === "list" ? leads.length : undefined}
       >
         {settingsOpen && (
-          <div className="absolute left-1/2 top-full z-40 grid w-[min(calc(100vw-1.5rem),600px)] -translate-x-1/2 grid-cols-2 divide-x divide-odoo-border-light rounded-b-[3px] border border-t-0 border-odoo-border bg-white p-1 shadow-lg">
+          <div className="absolute left-1/2 top-full z-40 grid w-[min(calc(100vw-1.5rem),600px)] -translate-x-1/2 grid-cols-2 divide-x divide-odoo-border-light rounded-b-[3px] border border-t-0 border-odoo-border bg-odoo-surface p-1 shadow-lg">
         <Dropdown label="Фильтры" active={filterActive}>
           <button type="button" className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg" onClick={() => setFilter("priority", "")}>
             Все приоритеты
@@ -815,7 +815,7 @@ export function KanbanPage() {
       {view === "list" && <LeadListView leads={leads} loading={leadsQ.isLoading} />}
 
       {view !== "list" && (
-      <div className="flex h-[calc(100dvh-90px)] min-h-0 snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden overscroll-x-contain border-t border-odoo-border-light bg-white md:snap-none">
+      <div className="flex h-[calc(100dvh-90px)] min-h-0 snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden overscroll-x-contain border-t border-odoo-border-light bg-odoo-surface md:snap-none">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragCancel={() => setActiveLead(null)} onDragEnd={onDragEnd}>
           {group === "stage"
             ? stages.map((stage) => (
@@ -835,9 +835,9 @@ export function KanbanPage() {
                   <div className="mb-2 text-[13px] font-semibold">
                     {col.title} <span className="font-normal text-odoo-text-muted">{col.items.length}</span>
                   </div>
-                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-white [scrollbar-gutter:stable]">
+                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-odoo-surface [scrollbar-gutter:stable]">
                     {col.items.map((lead) => (
-                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="overflow-hidden border-b border-odoo-border-light bg-white px-2.5 py-2 hover:bg-[#faf8f9]">
+                      <Link key={lead.id} to={`/crm/leads/${lead.id}`} className="overflow-hidden border-b border-odoo-border-light bg-odoo-surface px-2.5 py-2 hover:bg-odoo-surface-hover">
                         <LeadCardBody lead={lead} />
                       </Link>
                     ))}

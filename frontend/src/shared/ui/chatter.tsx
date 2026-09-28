@@ -77,7 +77,7 @@ function AttachmentThumb({
 
   if (failed) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-[4px] border border-odoo-border bg-white px-1.5 py-0.5 text-[11px] text-odoo-text-muted">
+      <span className="inline-flex items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-surface px-1.5 py-0.5 text-[11px] text-odoo-text-muted">
         <Paperclip className="h-3 w-3" />
         {file.name}
       </span>
@@ -89,7 +89,7 @@ function AttachmentThumb({
       type="button"
       onClick={onOpen}
       title={`${file.name} · ${formatSize(file.size)} — открыть полностью`}
-      className="block overflow-hidden rounded-[4px] border border-odoo-border bg-white transition-colors hover:border-odoo-primary"
+      className="block overflow-hidden rounded-[4px] border border-odoo-border bg-odoo-surface transition-colors hover:border-odoo-primary"
     >
       {url ? (
         <img src={url} alt={file.name} className="max-h-[220px] max-w-full object-contain" />
@@ -164,7 +164,7 @@ export function Chatter({
   }, [timeline, query]);
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col border-l border-odoo-border bg-white">
+    <div className="flex h-full min-h-[420px] flex-col border-l border-odoo-border bg-odoo-surface">
       <div className="flex flex-wrap items-center gap-1 px-3 py-2">
         {MODES.map((m) => (
           <button
@@ -174,7 +174,7 @@ export function Chatter({
             className={`h-7 rounded-[4px] px-3 text-[13px] transition-colors ${
               mode === m.id
                 ? "bg-odoo-primary font-medium text-white"
-                : "border border-odoo-border bg-white text-odoo-text hover:bg-odoo-bg"
+                : "border border-odoo-border bg-odoo-surface text-odoo-text hover:bg-odoo-bg"
             }`}
           >
             {m.label}
@@ -232,7 +232,7 @@ export function Chatter({
             type="button"
             disabled={uploading}
             onClick={() => fileInput.current?.click()}
-            className="mb-1 inline-flex h-7 items-center gap-1 rounded-[4px] border border-odoo-border bg-white px-2 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg disabled:opacity-60"
+            className="mb-1 inline-flex h-7 items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-surface px-2 text-[13px] text-odoo-text transition-colors hover:bg-odoo-bg disabled:opacity-60"
           >
             <Paperclip className="h-3.5 w-3.5" />
             {uploading ? "Загрузка…" : "Прикрепить файл"}
@@ -407,7 +407,7 @@ export function Chatter({
             </div>
             {entries.map((entry) => (
               <div key={entry.id} className="flex items-start gap-2 py-1.5">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-[#4b4b55] text-[11px] font-semibold text-white">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-odoo-avatar text-[11px] font-semibold text-white">
                   {entry.author_initials}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -422,7 +422,7 @@ export function Chatter({
                       <span className="text-odoo-text-light">•</span>
                       <span className="text-odoo-text">{entry.old_value || "—"}</span>
                       <span className="text-odoo-text-light">→</span>
-                      <span className="font-medium text-odoo-secondary">{entry.new_value || "—"}</span>
+                      <span className="font-medium text-odoo-link">{entry.new_value || "—"}</span>
                       <span className="italic text-odoo-text-muted">({entry.field_label})</span>
                     </div>
                   ) : (
@@ -455,7 +455,7 @@ export function Chatter({
                             type="button"
                             onClick={() => (onPreview ?? onDownload)?.(file)}
                             title={`${file.name} · ${formatSize(file.size)} — открыть просмотр`}
-                            className="inline-flex max-w-[240px] items-center gap-1 rounded-[4px] border border-odoo-border bg-white px-1.5 py-0.5 text-[11px] text-odoo-primary transition-colors hover:bg-odoo-bg"
+                            className="inline-flex max-w-[240px] items-center gap-1 rounded-[4px] border border-odoo-border bg-odoo-surface px-1.5 py-0.5 text-[11px] text-odoo-primary transition-colors hover:bg-odoo-bg"
                           >
                             <Paperclip className="h-3 w-3 shrink-0" />
                             <span className="truncate">{file.name}</span>

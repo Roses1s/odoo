@@ -13,7 +13,7 @@ export function AdminLayout() {
     <AppShell>
       <Breadcrumb items={["Панель управления"]} />
       <div className="flex">
-        <aside className="w-48 shrink-0 border-r border-odoo-border-light bg-white p-3">
+        <aside className="w-48 shrink-0 border-r border-odoo-border-light bg-odoo-surface p-3">
           {LINKS.map((l) => (
             <NavLink
               key={l.to}

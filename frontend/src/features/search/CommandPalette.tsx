@@ -44,7 +44,7 @@ export function CommandPalette() {
   return (
     <div className="fixed inset-0 z-[80] bg-black/30" onClick={() => setOpen(false)}>
       <div
-        className="mx-auto mt-24 w-full max-w-lg rounded-lg border border-odoo-border bg-white shadow-xl"
+        className="mx-auto mt-24 w-full max-w-lg rounded-lg border border-odoo-border bg-odoo-surface shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <input

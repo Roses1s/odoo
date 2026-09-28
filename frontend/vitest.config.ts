@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // Lets the palette test read src/index.css, which is the single source of
+    // truth for the theme tokens.
+    css: true,
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },

@@ -2,6 +2,7 @@ import { LayoutGrid, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/store";
+import { toggleTheme, useTheme } from "@/shared/lib/theme";
 
 export function Navbar() {
   const user = useAuthStore((s) => s.user);
@@ -9,6 +10,7 @@ export function Navbar() {
   const [menu, setMenu] = useState(false);
   const [sheet, setSheet] = useState(false);
   const navigate = useNavigate();
+  const theme = useTheme();
   const letter = (user?.first_name || user?.email || "U").slice(0, 1).toUpperCase();
 
   const links = (
@@ -17,7 +19,7 @@ export function Navbar() {
       onClick={() => setSheet(false)}
       className={({ isActive }) =>
         `inline-flex h-10 items-center px-2 text-[13px] leading-none transition-colors ${
-          isActive ? "font-medium text-[#212529]" : "text-[#495057] hover:text-[#212529]"
+          isActive ? "font-medium text-odoo-text" : "text-odoo-text-soft hover:text-odoo-text"
         }`
       }
     >
@@ -26,19 +28,19 @@ export function Navbar() {
   );
 
   return (
-    <nav className="sticky top-0 z-50 flex h-10 shrink-0 items-center bg-white px-3 text-[#212529]">
+    <nav className="sticky top-0 z-50 flex h-10 shrink-0 items-center bg-odoo-surface px-3 text-odoo-text">
       <button type="button" className="mr-2 inline-flex h-10 items-center md:hidden" onClick={() => setSheet(true)} aria-label="Меню">
         <Menu className="h-5 w-5" />
       </button>
       <Link
         to="/"
-        className="inline-flex h-10 items-center text-[#6c757d] transition-colors hover:text-[#212529]"
+        className="inline-flex h-10 items-center text-odoo-text-muted transition-colors hover:text-odoo-text"
         title="Приложения"
         aria-label="Приложения"
       >
         <LayoutGrid className="h-4 w-4" strokeWidth={1.75} />
       </Link>
-      <Link to="/crm" className="ml-2 inline-flex h-10 items-center text-[14px] font-semibold leading-none text-[#212529]">
+      <Link to="/crm" className="ml-2 inline-flex h-10 items-center text-[14px] font-semibold leading-none text-odoo-text">
         CRM
       </Link>
       <div className="ml-2 hidden h-10 items-center md:flex">{links}</div>
@@ -53,7 +55,7 @@ export function Navbar() {
             {letter}
           </button>
           {menu && (
-            <div className="absolute right-0 mt-2 min-w-[180px] rounded-md border border-odoo-border bg-white py-1 text-odoo-text shadow-lg">
+            <div className="absolute right-0 mt-2 min-w-[200px] rounded-md border border-odoo-border bg-odoo-surface py-1 text-odoo-text shadow-lg">
               <div className="px-3 py-1.5 text-xs text-odoo-text-muted">{user?.email}</div>
               {(user?.role === "admin" || user?.role === "manager") && (
                 <button
@@ -69,10 +71,24 @@ export function Navbar() {
               )}
               <button
                 type="button"
-                className="block w-full px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
-                onClick={() => document.documentElement.classList.toggle("dark")}
+                role="switch"
+                aria-checked={theme === "dark"}
+                aria-label="Тёмный режим"
+                className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-sm hover:bg-odoo-bg"
+                onClick={toggleTheme}
               >
-                Тёмная тема
+                Тёмный режим
+                <span
+                  className={`relative inline-flex h-4 w-8 shrink-0 items-center rounded-full transition-colors ${
+                    theme === "dark" ? "bg-odoo-success" : "bg-odoo-border"
+                  }`}
+                >
+                  <span
+                    className={`absolute h-3 w-3 rounded-full bg-white transition-transform ${
+                      theme === "dark" ? "translate-x-[18px]" : "translate-x-[2px]"
+                    }`}
+                  />
+                </span>
               </button>
               <button
                 type="button"
@@ -91,7 +107,7 @@ export function Navbar() {
 
       {sheet && (
         <div className="fixed inset-0 z-[60] bg-black/20 md:hidden" onClick={() => setSheet(false)}>
-          <div className="h-full w-64 bg-white p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+          <div className="h-full w-64 bg-odoo-surface p-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <span className="font-semibold">CRM</span>
               <button type="button" onClick={() => setSheet(false)}>

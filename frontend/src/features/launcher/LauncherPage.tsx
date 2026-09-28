@@ -35,7 +35,7 @@ export function LauncherPage() {
       <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-md border border-odoo-border-light bg-white p-5 shadow-sm">
+            <div key={i} className="rounded-md border border-odoo-border-light bg-odoo-surface p-5 shadow-sm">
               <Skeleton className="mb-3 h-10 w-10" />
               <Skeleton className="mb-2 h-4 w-24" />
               <Skeleton className="h-3 w-full" />
@@ -47,7 +47,7 @@ export function LauncherPage() {
             <Link
               key={app.slug}
               to={app.route}
-              className="rounded-md border border-odoo-border-light bg-white p-5 shadow-sm transition-all duration-150 hover:border-odoo-border hover:shadow-md"
+              className="rounded-md border border-odoo-border-light bg-odoo-surface p-5 shadow-sm transition-all duration-150 hover:border-odoo-border hover:shadow-md"
             >
               <div className="mb-3 flex h-10 w-10 items-center justify-center rounded bg-odoo-primary/10 text-odoo-primary">
                 <Icon className="h-5 w-5" strokeWidth={1.75} />

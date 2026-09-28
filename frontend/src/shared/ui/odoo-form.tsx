@@ -28,7 +28,7 @@ export function FormSheetBg({ children }: { children: ReactNode }) {
 export function FormSheet({ children }: { children: ReactNode }) {
   // .o_form_sheet: white, 1px border, radius 4px, padding 16px (24px on lg)
   return (
-    <div className="rounded-[4px] border border-odoo-border bg-white p-4 lg:p-6">{children}</div>
+    <div className="rounded-[4px] border border-odoo-border bg-odoo-surface p-4 lg:p-6">{children}</div>
   );
 }
 
@@ -105,7 +105,9 @@ export function FormStatusbar({
                 height: STATUSBAR_HEIGHT,
                 clipPath: single ? undefined : arrowClip(shape),
                 marginLeft: isFirst ? 0 : -(ARROW_WIDTH - 2),
-                backgroundColor: active ? "#00A09D" : "#DEE2E6",
+                backgroundColor: active
+                  ? "rgb(var(--odoo-secondary))"
+                  : "rgb(var(--odoo-statusbar))",
               }}
               className="relative inline-flex"
             >
@@ -116,12 +118,12 @@ export function FormStatusbar({
                 onClick={() => onSelect(item.id)}
                 title={item.name}
                 style={{ clipPath: single ? undefined : arrowClip(shape, 1) }}
-                className={`max-w-[200px] truncate bg-white text-[13px] transition-colors disabled:cursor-wait ${
+                className={`max-w-[200px] truncate bg-odoo-surface text-[13px] transition-colors disabled:cursor-wait ${
                   isFirst ? "pl-4" : "pl-5"
                 } pr-4 ${
                   active
                     ? "font-semibold text-odoo-text"
-                    : "font-medium text-[#495057] hover:bg-odoo-bg"
+                    : "font-medium text-odoo-statusbar-text hover:bg-odoo-bg"
                 }`}
               >
                 {item.name}
@@ -137,7 +139,7 @@ export function FormStatusbar({
                 height: STATUSBAR_HEIGHT,
                 clipPath: arrowClip("end"),
                 marginLeft: -(ARROW_WIDTH - 2),
-                backgroundColor: "#DEE2E6",
+                backgroundColor: "rgb(var(--odoo-statusbar))",
               }}
               className="relative inline-flex"
             >
@@ -148,7 +150,7 @@ export function FormStatusbar({
                 aria-label="Другие этапы"
                 onClick={() => setMoreOpen((v) => !v)}
                 style={{ clipPath: arrowClip("end", 1) }}
-                className="bg-white pl-5 pr-4 text-[13px] font-medium text-[#495057] transition-colors hover:bg-odoo-bg"
+                className="bg-odoo-surface pl-5 pr-4 text-[13px] font-medium text-odoo-statusbar-text transition-colors hover:bg-odoo-bg"
               >
                 …
               </button>
@@ -161,7 +163,7 @@ export function FormStatusbar({
                   aria-label="Закрыть"
                   onClick={() => setMoreOpen(false)}
                 />
-                <div className="absolute right-0 top-[38px] z-50 max-h-[260px] min-w-[220px] overflow-auto rounded-[3px] border border-odoo-border bg-white py-1 shadow-lg">
+                <div className="absolute right-0 top-[38px] z-50 max-h-[260px] min-w-[220px] overflow-auto rounded-[3px] border border-odoo-border bg-odoo-surface py-1 shadow-lg">
                   {hidden.map((item) => (
                     <button
                       key={item.id}
@@ -195,7 +197,7 @@ export function FormGroup({ children }: { children: ReactNode }) {
 /** Record title band (full sheet width, as on the reference lead form). */
 export function FormTitle({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-4 rounded-[2px] bg-[#fdeff1] px-3 py-1.5">
+    <div className="mb-4 rounded-[2px] bg-odoo-title-band px-3 py-1.5">
       <h1 className="text-[24px] font-normal leading-[34px] text-odoo-text">{children}</h1>
     </div>
   );
@@ -319,7 +321,7 @@ export function Notebook({
   return (
     <div className="mt-2.5">
       <div className="-mx-4 overflow-x-auto lg:-mx-6">
-        <div className="flex border-b border-odoo-border bg-white px-4 lg:px-6">
+        <div className="flex border-b border-odoo-border bg-odoo-surface px-4 lg:px-6">
           {tabs.map((tab) => {
             const on = tab.id === current?.id;
             return (
@@ -329,7 +331,7 @@ export function Notebook({
                 onClick={() => onSelect(tab.id)}
                 className={`-mb-px mr-[-1px] rounded-t-[4px] border px-4 py-2 text-[13px] transition-colors ${
                   on
-                    ? "border-odoo-border border-b-white bg-white font-medium text-odoo-text"
+                    ? "border-odoo-border border-b-odoo-surface bg-odoo-surface font-medium text-odoo-text"
                     : "border-transparent text-odoo-text-muted hover:border-odoo-border-light"
                 }`}
               >

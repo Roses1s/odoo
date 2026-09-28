@@ -61,7 +61,7 @@ export function CarriersPage() {
         </thead>
         <tbody>
           {(data ?? []).map((c) => (
-            <tr key={c.id} className="border-b border-odoo-border-light bg-white">
+            <tr key={c.id} className="border-b border-odoo-border-light bg-odoo-surface">
               <td className="p-2">{c.name}</td>
               <td className="p-2">{c.inn}</td>
               <td className="p-2">{c.is_active ? "да" : "нет"}</td>
